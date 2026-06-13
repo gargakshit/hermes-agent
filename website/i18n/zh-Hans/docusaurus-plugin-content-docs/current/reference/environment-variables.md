@@ -127,6 +127,7 @@ description: "Hermes Agent 使用的所有环境变量完整参考"
 | `FIRECRAWL_API_KEY` | 网页抓取和云浏览器（[firecrawl.dev](https://firecrawl.dev/)） |
 | `FIRECRAWL_API_URL` | 自托管实例的自定义 Firecrawl API 端点（可选） |
 | `TAVILY_API_KEY` | Tavily API 密钥，用于 AI 原生网络搜索、提取和爬取（[app.tavily.com](https://app.tavily.com/home)） |
+| `KAGI_API_KEY` | Kagi API 密钥，用于付费网络搜索和 Markdown 提取（[kagi.com/api](https://kagi.com/api)） |
 | `SEARXNG_URL` | 免费自托管网络搜索的 SearXNG 实例 URL——无需 API 密钥（[searxng.github.io](https://searxng.github.io/searxng/)） |
 | `TAVILY_BASE_URL` | 覆盖 Tavily API 端点。适用于企业代理和自托管 Tavily 兼容搜索后端。与 `GROQ_BASE_URL` 模式相同。 |
 | `EXA_API_KEY` | Exa API 密钥，用于 AI 原生网络搜索和内容获取（[exa.ai](https://exa.ai/)） |

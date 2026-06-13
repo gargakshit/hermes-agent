@@ -1,0 +1,7 @@
+name: web-kagi
+version: 1.0.0
+description: "Kagi web search + content extraction. Requires KAGI_API_KEY — manage keys at https://kagi.com/api."
+author: NousResearch
+kind: backend
+provides_web_providers:
+  - kagi

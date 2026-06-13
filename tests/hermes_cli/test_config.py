@@ -584,6 +584,14 @@ class TestOptionalEnvVarsRegistry:
         from hermes_cli.config import OPTIONAL_ENV_VARS
         assert OPTIONAL_ENV_VARS["TAVILY_API_KEY"]["url"] == "https://app.tavily.com/home"
 
+    def test_kagi_api_key_registered(self):
+        """KAGI_API_KEY is listed in OPTIONAL_ENV_VARS."""
+        from hermes_cli.config import OPTIONAL_ENV_VARS
+        assert "KAGI_API_KEY" in OPTIONAL_ENV_VARS
+        assert OPTIONAL_ENV_VARS["KAGI_API_KEY"]["category"] == "tool"
+        assert OPTIONAL_ENV_VARS["KAGI_API_KEY"]["password"] is True
+        assert OPTIONAL_ENV_VARS["KAGI_API_KEY"]["url"] == "https://kagi.com/api/keys"
+
     def test_tavily_in_env_vars_by_version(self):
         """TAVILY_API_KEY is listed in ENV_VARS_BY_VERSION."""
         from hermes_cli.config import ENV_VARS_BY_VERSION

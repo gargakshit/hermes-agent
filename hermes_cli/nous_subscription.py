@@ -404,6 +404,7 @@ def get_nous_subscription_features(
     direct_firecrawl = bool(get_env_value("FIRECRAWL_API_KEY") or get_env_value("FIRECRAWL_API_URL"))
     direct_parallel = bool(get_env_value("PARALLEL_API_KEY"))
     direct_tavily = bool(get_env_value("TAVILY_API_KEY"))
+    direct_kagi = bool(get_env_value("KAGI_API_KEY"))
     direct_searxng = bool(get_env_value("SEARXNG_URL"))
     direct_fal = fal_key_is_configured()
     direct_fal_video = direct_fal  # same FAL_KEY; separate var so use_gateway is independent
@@ -436,6 +437,7 @@ def get_nous_subscription_features(
         direct_exa = False
         direct_parallel = False
         direct_tavily = False
+        direct_kagi = False
     if image_use_gateway:
         direct_fal = False
     if video_use_gateway:
@@ -511,6 +513,7 @@ def get_nous_subscription_features(
             or (web_backend == "firecrawl" and direct_firecrawl)
             or (web_backend == "parallel" and direct_parallel)
             or (web_backend == "tavily" and direct_tavily)
+            or (web_backend == "kagi" and direct_kagi)
             or (web_backend == "searxng" and direct_searxng)
             # Per-capability overrides: search_backend or extract_backend may be set
             # without web.backend (using the new split config from #20061)
@@ -519,10 +522,22 @@ def get_nous_subscription_features(
             or (web_search_backend == "firecrawl" and direct_firecrawl)
             or (web_search_backend == "parallel" and direct_parallel)
             or (web_search_backend == "tavily" and direct_tavily)
+            or (web_search_backend == "kagi" and direct_kagi)
+            or (web_extract_backend == "exa" and direct_exa)
+            or (web_extract_backend == "firecrawl" and direct_firecrawl)
+            or (web_extract_backend == "parallel" and direct_parallel)
+            or (web_extract_backend == "tavily" and direct_tavily)
+            or (web_extract_backend == "kagi" and direct_kagi)
         )
     )
     web_available = bool(
-        managed_web_available or direct_exa or direct_firecrawl or direct_parallel or direct_tavily or direct_searxng
+        managed_web_available
+        or direct_exa
+        or direct_firecrawl
+        or direct_parallel
+        or direct_tavily
+        or direct_kagi
+        or direct_searxng
     )
 
     image_managed = image_tool_enabled and managed_image_available and not direct_fal
@@ -639,8 +654,8 @@ def get_nous_subscription_features(
             managed_by_nous=web_managed,
             direct_override=web_active and not web_managed,
             toolset_enabled=web_tool_enabled,
-            current_provider=web_backend or web_search_backend or "",
-            explicit_configured=bool(web_backend or web_search_backend),
+            current_provider=web_backend or web_search_backend or web_extract_backend or "",
+            explicit_configured=bool(web_backend or web_search_backend or web_extract_backend),
         ),
         "image_gen": NousFeatureState(
             key="image_gen",
@@ -775,6 +790,7 @@ def apply_nous_managed_defaults(
         or get_env_value("TAVILY_API_KEY")
         or get_env_value("FIRECRAWL_API_KEY")
         or get_env_value("FIRECRAWL_API_URL")
+        or get_env_value("KAGI_API_KEY")
     ):
         web_cfg["backend"] = "firecrawl"
         changed.add("web")
@@ -867,6 +883,7 @@ def _get_gateway_direct_credentials() -> Dict[str, bool]:
             or get_env_value("PARALLEL_API_KEY")
             or get_env_value("TAVILY_API_KEY")
             or get_env_value("EXA_API_KEY")
+            or get_env_value("KAGI_API_KEY")
         ),
         "image_gen": fal_direct,
         "video_gen": fal_direct,

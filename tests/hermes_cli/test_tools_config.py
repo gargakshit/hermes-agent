@@ -785,6 +785,7 @@ def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
         "FIRECRAWL_API_KEY",
         "FIRECRAWL_API_URL",
         "TAVILY_API_KEY",
+        "KAGI_API_KEY",
         "PARALLEL_API_KEY",
         "BROWSERBASE_API_KEY",
         "BROWSERBASE_PROJECT_ID",
@@ -849,6 +850,7 @@ def test_first_install_nous_auto_configures_video_gen(monkeypatch):
         "FIRECRAWL_API_KEY",
         "FIRECRAWL_API_URL",
         "TAVILY_API_KEY",
+        "KAGI_API_KEY",
         "PARALLEL_API_KEY",
         "BROWSERBASE_API_KEY",
         "BROWSERBASE_PROJECT_ID",
@@ -1563,5 +1565,4 @@ def test_real_configurable_changes_still_reported_in_diff():
     # User adds 'vision' (configurable) — must still report as added.
     new_enabled2 = (current - {"kanban"}) | {"vision"}
     assert ((new_enabled2 - current) & universe) == {"vision"}
-
 

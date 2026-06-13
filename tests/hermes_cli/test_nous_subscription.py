@@ -55,6 +55,29 @@ def test_get_nous_subscription_features_recognizes_direct_exa_backend(monkeypatc
     assert features.web.current_provider == "exa"
 
 
+def test_get_nous_subscription_features_recognizes_direct_kagi_extract_backend(monkeypatch):
+    env = {"KAGI_API_KEY": "kagi-test"}
+
+    monkeypatch.setattr(ns, "get_env_value", lambda name: env.get(name, ""))
+    monkeypatch.setattr(
+        ns, "get_nous_portal_account_info", lambda: _account(logged_in=False)
+    )
+    monkeypatch.setattr(ns, "_toolset_enabled", lambda config, key: key == "web")
+    monkeypatch.setattr(ns, "_has_agent_browser", lambda: False)
+    monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
+    monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: False)
+    monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: False)
+
+    features = ns.get_nous_subscription_features({"web": {"extract_backend": "kagi"}})
+
+    assert features.web.available is True
+    assert features.web.active is True
+    assert features.web.managed_by_nous is False
+    assert features.web.direct_override is True
+    assert features.web.current_provider == "kagi"
+    assert features.web.explicit_configured is True
+
+
 def test_get_nous_subscription_features_force_fresh_forwards_account_request(monkeypatch):
     calls = []
 
@@ -232,6 +255,16 @@ def test_get_nous_subscription_features_does_not_treat_quoted_false_as_gateway_o
     assert features.web.managed_by_nous is False
     assert features.web.direct_override is True
     assert features.web.current_provider == "exa"
+
+
+def test_gateway_direct_credentials_include_kagi(monkeypatch):
+    env = {"KAGI_API_KEY": "kagi-direct-key"}
+
+    monkeypatch.setattr(ns, "get_env_value", lambda name: env.get(name, ""))
+    monkeypatch.setattr(ns, "fal_key_is_configured", lambda: False)
+    monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
+
+    assert ns._get_gateway_direct_credentials()["web"] is True
 
 
 def test_get_gateway_eligible_tools_ignores_quoted_false_opt_in(monkeypatch):
@@ -545,6 +578,41 @@ def test_apply_nous_managed_defaults_skips_fal_tools_when_key_present(monkeypatc
     assert "video_gen" not in changed
     assert "image_gen" not in config
     assert "video_gen" not in config
+
+
+def test_apply_nous_managed_defaults_skips_web_when_kagi_key_present(monkeypatch):
+    """A direct Kagi key is a web setup, so Nous defaults must not overwrite it."""
+    env = {"KAGI_API_KEY": "kagi-direct-key"}
+
+    monkeypatch.setattr(ns, "get_env_value", lambda name: env.get(name, ""))
+    monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
+    monkeypatch.setattr(ns, "_local_stt_backend_available", lambda: True)
+    monkeypatch.setattr(ns, "fal_key_is_configured", lambda: False)
+    monkeypatch.setattr(
+        ns,
+        "get_nous_subscription_features",
+        lambda config, **kw: ns.NousSubscriptionFeatures(
+            subscribed=True,
+            nous_auth_present=True,
+            provider_is_nous=True,
+            account_info=_account(logged_in=True, paid=True),
+            features={
+                key: ns.NousFeatureState(
+                    key=key, label=key, included_by_default=True,
+                    available=False, active=False, managed_by_nous=False,
+                    direct_override=False, toolset_enabled=False,
+                    explicit_configured=False,
+                )
+                for key in ("web", "image_gen", "video_gen", "tts", "stt", "browser", "modal")
+            },
+        ),
+    )
+
+    config = {"model": {"provider": "nous"}}
+    changed = ns.apply_nous_managed_defaults(config, enabled_toolsets=["web"])
+
+    assert "web" not in changed
+    assert config["web"] == {}
 
 
 def test_apply_nous_managed_defaults_preserves_existing_video_gen_section(monkeypatch):

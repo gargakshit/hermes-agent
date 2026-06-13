@@ -259,6 +259,7 @@ class TestBackendSelection:
         "TOOL_GATEWAY_SCHEME",
         "TOOL_GATEWAY_USER_TOKEN",
         "TAVILY_API_KEY",
+        "KAGI_API_KEY",
     )
 
     def setup_method(self):
@@ -305,6 +306,13 @@ class TestBackendSelection:
         with patch("tools.web_tools._load_web_config", return_value={"backend": "tavily"}):
             assert _get_backend() == "tavily"
 
+    def test_config_kagi(self):
+        """web.backend=kagi in config → 'kagi' regardless of other keys."""
+        from tools.web_tools import _get_backend
+        with patch("tools.web_tools._load_web_config", return_value={"backend": "kagi"}), \
+             patch.dict(os.environ, {"TAVILY_API_KEY": "tvly-test"}):
+            assert _get_backend() == "kagi"
+
     def test_config_tavily_overrides_env_keys(self):
         """web.backend=tavily in config → 'tavily' even if Firecrawl key set."""
         from tools.web_tools import _get_backend
@@ -323,6 +331,12 @@ class TestBackendSelection:
         from tools.web_tools import _get_backend
         with patch("tools.web_tools._load_web_config", return_value={"backend": "Tavily"}):
             assert _get_backend() == "tavily"
+
+    def test_config_kagi_case_insensitive(self):
+        """web.backend=Kagi (mixed case) → 'kagi'."""
+        from tools.web_tools import _get_backend
+        with patch("tools.web_tools._load_web_config", return_value={"backend": "Kagi"}):
+            assert _get_backend() == "kagi"
 
     # ── Fallback (no web.backend in config) ───────────────────────────
 
@@ -368,6 +382,21 @@ class TestBackendSelection:
         with patch("tools.web_tools._load_web_config", return_value={}), \
              patch.dict(os.environ, {"TAVILY_API_KEY": "tvly-test", "PARALLEL_API_KEY": "par-test"}):
             assert _get_backend() == "tavily"
+
+    def test_fallback_kagi_only_key(self):
+        """Only KAGI_API_KEY set → 'kagi'."""
+        from tools.web_tools import _get_backend
+        with patch("tools.web_tools._load_web_config", return_value={}), \
+             patch("tools.web_tools._is_tool_gateway_ready", return_value=False), \
+             patch.dict(os.environ, {"KAGI_API_KEY": "kagi-test"}):
+            assert _get_backend() == "kagi"
+
+    def test_fallback_existing_paid_keys_beat_kagi(self):
+        """Existing higher-priority paid provider keys keep their old precedence."""
+        from tools.web_tools import _get_backend
+        with patch("tools.web_tools._load_web_config", return_value={}), \
+             patch.dict(os.environ, {"EXA_API_KEY": "exa-test", "KAGI_API_KEY": "kagi-test"}):
+            assert _get_backend() == "exa"
 
     def test_fallback_parallel_beats_firecrawl_direct(self):
         """Parallel + Firecrawl-direct → parallel (parallel is the higher-priority
@@ -583,6 +612,7 @@ class TestCheckWebApiKey:
         "TOOL_GATEWAY_SCHEME",
         "TOOL_GATEWAY_USER_TOKEN",
         "TAVILY_API_KEY",
+        "KAGI_API_KEY",
     )
 
     def setup_method(self):
@@ -626,6 +656,12 @@ class TestCheckWebApiKey:
             from tools.web_tools import check_web_api_key
             assert check_web_api_key() is True
 
+    def test_kagi_key_only(self):
+        with patch("tools.web_tools._is_tool_gateway_ready", return_value=False), \
+             patch.dict(os.environ, {"KAGI_API_KEY": "kagi-test"}):
+            from tools.web_tools import check_web_api_key
+            assert check_web_api_key() is True
+
     def test_no_keys_usable_via_free_parallel(self):
         """No credentials → check_web_api_key True: selection resolves to the
         keyless Parallel free MCP, which genuinely services calls (web works out
@@ -636,7 +672,8 @@ class TestCheckWebApiKey:
              patch("tools.web_tools._ddgs_package_importable", return_value=False), \
              patch.dict(os.environ, {}, clear=False):
             for k in ("PARALLEL_API_KEY", "FIRECRAWL_API_KEY", "FIRECRAWL_API_URL",
-                      "TAVILY_API_KEY", "EXA_API_KEY", "SEARXNG_URL", "BRAVE_SEARCH_API_KEY"):
+                      "TAVILY_API_KEY", "KAGI_API_KEY", "EXA_API_KEY",
+                      "SEARXNG_URL", "BRAVE_SEARCH_API_KEY"):
                 os.environ.pop(k, None)
             assert check_web_api_key() is True
 
@@ -662,7 +699,8 @@ class TestCheckWebApiKey:
              patch.dict(os.environ, {}, clear=False):
             for var in (
                 "PARALLEL_API_KEY", "FIRECRAWL_API_KEY", "FIRECRAWL_API_URL",
-                "TAVILY_API_KEY", "EXA_API_KEY", "BRAVE_SEARCH_API_KEY", "SEARXNG_URL",
+                "TAVILY_API_KEY", "KAGI_API_KEY", "EXA_API_KEY",
+                "BRAVE_SEARCH_API_KEY", "SEARXNG_URL",
             ):
                 os.environ.pop(var, None)
             assert check_web_api_key() is False
@@ -677,7 +715,7 @@ class TestCheckWebApiKey:
              patch.dict(os.environ, {}, clear=False):
             for var in (
                 "PARALLEL_API_KEY", "FIRECRAWL_API_KEY", "FIRECRAWL_API_URL",
-                "TAVILY_API_KEY", "EXA_API_KEY", "BRAVE_SEARCH_API_KEY",
+                "TAVILY_API_KEY", "KAGI_API_KEY", "EXA_API_KEY", "BRAVE_SEARCH_API_KEY",
             ):
                 os.environ.pop(var, None)
             os.environ["SEARXNG_URL"] = "http://localhost:8080"
@@ -781,3 +819,4 @@ def test_web_requires_env_includes_exa_key():
     from tools.web_tools import _web_requires_env
 
     assert "EXA_API_KEY" in _web_requires_env()
+    assert "KAGI_API_KEY" in _web_requires_env()
