@@ -83,20 +83,22 @@ delegation:
 
 ## 终端后端配置
 
-Hermes 支持六种终端后端。每种后端决定 agent 的 shell 命令实际在哪里执行 —— 本地机器、Docker 容器、通过 SSH 的远程服务器、Modal 云沙箱（直接或通过 Nous 托管的 gateway）、Daytona 工作区，或 Singularity/Apptainer 容器。
+Hermes 支持七种终端后端。每种后端决定 agent 的 shell 命令实际在哪里执行 —— 本地机器、Docker 容器、通过 SSH 的远程服务器、Modal 云沙箱（直接或通过 Nous 托管的 gateway）、Daytona 工作区、持久 Sprites 沙箱，或 Singularity/Apptainer 容器。
 
 ```yaml
 terminal:
-  backend: local    # local | docker | ssh | modal | daytona | singularity
+  backend: local    # local | docker | ssh | modal | daytona | sprites | singularity
   cwd: "."          # Gateway/cron 工作目录（CLI 始终使用启动目录）
   timeout: 180      # 每条命令的超时时间（秒）
   env_passthrough: []  # 转发到沙箱执行的环境变量名（terminal + execute_code）
   singularity_image: "docker://nikolaik/python-nodejs:python3.11-nodejs20"  # Singularity 后端的容器镜像
   modal_image: "nikolaik/python-nodejs:python3.11-nodejs20"                 # Modal 后端的容器镜像
   daytona_image: "nikolaik/python-nodejs:python3.11-nodejs20"               # Daytona 后端的容器镜像
+  sprites_api_base: "https://api.sprites.dev"                               # Sprites API 端点
+  sprites_name_prefix: "hermes"                                             # Hermes 管理的 Sprite 名称前缀
 ```
 
-对于 Modal 和 Daytona 等云沙箱，`container_persistent: true` 表示 Hermes 将尝试在沙箱重建后保留文件系统状态。这并不保证相同的活跃沙箱、PID 空间或后台进程之后仍在运行。
+对于 Modal、Daytona 和 Sprites 等云沙箱，`container_persistent: true` 表示 Hermes 会在后端支持时跨会话保留文件系统状态。这并不保证相同的活跃 PID 空间或后台进程之后仍在运行。Sprites 本身是持久的，并会在空闲时自动休眠；Hermes 在命令结束后关闭连接，并且不会在持久清理时停止或休眠 Sprite。
 
 ### 后端概览
 
@@ -107,6 +109,7 @@ terminal:
 | **ssh** | 通过 SSH 的远程服务器 | 网络边界 | 远程开发、强大硬件 |
 | **modal** | Modal 云沙箱 | 完全（云 VM） | 临时云计算、评估 |
 | **daytona** | Daytona 工作区 | 完全（云容器） | 托管云开发环境 |
+| **sprites** | Sprites 持久 Linux 沙箱 | 完全（硬件隔离 Linux） | 持久远程 agent 工作区 |
 | **singularity** | Singularity/Apptainer 容器 | 命名空间（--containall） | HPC 集群、共享机器 |
 
 ### Local 后端
@@ -231,6 +234,24 @@ terminal:
 
 **磁盘限制：** Daytona 强制执行 10 GiB 最大值。超过此值的请求将被截断并发出警告。
 
+### Sprites 后端
+
+在 [Sprites](https://docs.sprites.dev/) 持久 Linux 沙箱中运行命令。Sprites 空闲时会自动休眠，并在 Hermes 打开下一次 exec 连接时唤醒。
+
+```yaml
+terminal:
+  backend: sprites
+  cwd: /home/sprite
+  timeout: 180
+  container_persistent: true
+  sprites_api_base: https://api.sprites.dev
+  sprites_name_prefix: hermes
+```
+
+**必需：** `~/.hermes/.env` 中的 `SPRITES_TOKEN`。
+
+**持久化：** Sprites 负责 VM 持久化、休眠、唤醒和持久文件系统状态。Hermes 只在命令运行时打开 WebSocket，命令结束或中断后关闭连接，并让 Sprite 自然休眠。持久清理仅清理本地状态；不会停止、休眠、hibernate 或销毁 Sprite。
+
 ### Singularity/Apptainer 后端
 
 在 [Singularity/Apptainer](https://apptainer.org) 容器中运行命令。专为 Docker 不可用的 HPC 集群和共享机器设计。
@@ -261,6 +282,7 @@ terminal:
 - **SSH** —— `TERMINAL_SSH_HOST` 和 `TERMINAL_SSH_USER` 都必须设置。如果缺少任一项，Hermes 会记录清晰的错误。
 - **Modal** —— 需要 `MODAL_TOKEN_ID` 环境变量或 `~/.modal.toml`。运行 `hermes doctor` 检查。
 - **Daytona** —— 需要 `DAYTONA_API_KEY`。Daytona SDK 处理服务器 URL 配置。
+- **Sprites** —— 需要 `~/.hermes/.env` 中的 `SPRITES_TOKEN`。运行 `hermes doctor` 检查 token 和 API base URL。
 - **Singularity** —— 需要 `$PATH` 中有 `apptainer` 或 `singularity`。HPC 集群上常见。
 
 如有疑问，将 `terminal.backend` 设回 `local` 并首先验证命令在那里运行。

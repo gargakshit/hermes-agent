@@ -64,3 +64,20 @@ class TestTerminalRequirements:
 
         assert "terminal" in names
         assert "execute_code" in names
+
+    def test_terminal_file_and_execute_code_tools_resolve_for_sprites(self, monkeypatch):
+        monkeypatch.setenv("SPRITES_TOKEN", "tok")
+        monkeypatch.setattr(
+            terminal_tool_module,
+            "_get_env_config",
+            lambda: {"env_type": "sprites"},
+        )
+        tools = get_tool_definitions(
+            enabled_toolsets=["terminal", "file", "code_execution"],
+            quiet_mode=True,
+        )
+        names = {tool["function"]["name"] for tool in tools}
+
+        assert "terminal" in names
+        assert "execute_code" in names
+        assert {"read_file", "write_file", "patch", "search_files"}.issubset(names)

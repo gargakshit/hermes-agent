@@ -102,20 +102,22 @@ Before that stash step, Hermes also restores tracked `package-lock.json` diffs l
 
 ## Terminal Backend Configuration
 
-Hermes supports six terminal backends. Each determines where the agent's shell commands actually execute — your local machine, a Docker container, a remote server via SSH, a Modal cloud sandbox (direct or via the Nous-managed gateway), a Daytona workspace, or a Singularity/Apptainer container.
+Hermes supports seven terminal backends. Each determines where the agent's shell commands actually execute — your local machine, a Docker container, a remote server via SSH, a Modal cloud sandbox (direct or via the Nous-managed gateway), a Daytona workspace, a persistent Sprites sandbox, or a Singularity/Apptainer container.
 
 ```yaml
 terminal:
-  backend: local    # local | docker | ssh | modal | daytona | singularity
+  backend: local    # local | docker | ssh | modal | daytona | sprites | singularity
   cwd: "."          # Gateway/cron working directory (CLI always uses launch dir)
   timeout: 180      # Per-command timeout in seconds
   env_passthrough: []  # Env var names to forward to sandboxed execution (terminal + execute_code)
   singularity_image: "docker://nikolaik/python-nodejs:python3.11-nodejs20"  # Container image for Singularity backend
   modal_image: "nikolaik/python-nodejs:python3.11-nodejs20"                 # Container image for Modal backend
   daytona_image: "nikolaik/python-nodejs:python3.11-nodejs20"               # Container image for Daytona backend
+  sprites_api_base: "https://api.sprites.dev"                               # Sprites API endpoint
+  sprites_name_prefix: "hermes"                                             # Prefix for Hermes-managed Sprites
 ```
 
-For cloud sandboxes such as Modal and Daytona, `container_persistent: true` means Hermes will try to preserve filesystem state across sandbox recreation. It does not promise that the same live sandbox, PID space, or background processes will still be running later.
+For cloud sandboxes such as Modal, Daytona, and Sprites, `container_persistent: true` means Hermes preserves filesystem state across sessions when the backend supports it. It does not promise that the same live PID space or background processes will still be running later. Sprites are already persistent and sleep automatically when idle; Hermes closes command connections after use and does not stop or hibernate persistent Sprites during cleanup.
 
 ### Backend Overview
 
@@ -126,6 +128,7 @@ For cloud sandboxes such as Modal and Daytona, `container_persistent: true` mean
 | **ssh** | Remote server via SSH | Network boundary | Remote dev, powerful hardware |
 | **modal** | Modal cloud sandbox | Full (cloud VM) | Ephemeral cloud compute, evals |
 | **daytona** | Daytona workspace | Full (cloud container) | Managed cloud dev environments |
+| **sprites** | Sprites persistent Linux sandbox | Full (hardware-isolated Linux) | Durable remote agent workspace |
 | **singularity** | Singularity/Apptainer container | Namespaces (--containall) | HPC clusters, shared machines |
 
 ### Local Backend
@@ -311,6 +314,26 @@ terminal:
 
 **Disk limit:** Daytona enforces a 10 GiB maximum. Requests above this are capped with a warning.
 
+### Sprites Backend
+
+Runs commands in a [Sprites](https://docs.sprites.dev/) persistent Linux sandbox. Sprites sleep automatically when idle and wake when Hermes opens the next exec connection.
+
+```yaml
+terminal:
+  backend: sprites
+  cwd: /home/sprite
+  timeout: 180
+  container_persistent: true
+  sprites_api_base: https://api.sprites.dev
+  sprites_name_prefix: hermes
+```
+
+**Required:** `SPRITES_TOKEN` in `~/.hermes/.env`.
+
+**Persistence:** Sprites own VM persistence, sleep, wake, and durable filesystem state. Hermes opens a WebSocket only while a command is running, closes it when the command exits or is interrupted, and lets the Sprite sleep naturally. Persistent cleanup is local-only; it does not stop, sleep, hibernate, or destroy the Sprite.
+
+**Credential files:** Hermes syncs managed `~/.hermes` credentials, skills, and cache files one-way into the Sprite before commands. Persistent Sprites do not broadly sync remote `.hermes` back to the host on cleanup.
+
 ### Singularity/Apptainer Backend
 
 Runs commands in a [Singularity/Apptainer](https://apptainer.org) container. Designed for HPC clusters and shared machines where Docker isn't available.
@@ -341,6 +364,7 @@ If terminal commands fail immediately or the terminal tool is reported as disabl
 - **SSH** — Both `TERMINAL_SSH_HOST` and `TERMINAL_SSH_USER` must be set. Hermes logs a clear error if either is missing.
 - **Modal** — Needs `MODAL_TOKEN_ID` env var or `~/.modal.toml`. Run `hermes doctor` to check.
 - **Daytona** — Needs `DAYTONA_API_KEY`. The Daytona SDK handles server URL configuration.
+- **Sprites** — Needs `SPRITES_TOKEN` in `~/.hermes/.env`. Run `hermes doctor` to check the token and API base URL.
 - **Singularity** — Needs `apptainer` or `singularity` in `$PATH`. Common on HPC clusters.
 
 When in doubt, set `terminal.backend` back to `local` and verify that commands run there first.

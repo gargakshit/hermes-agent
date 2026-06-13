@@ -413,6 +413,20 @@ def show_status(args):
     elif terminal_env == "daytona":
         daytona_image = os.getenv("TERMINAL_DAYTONA_IMAGE", "nikolaik/python-nodejs:python3.11-nodejs20")
         print(f"  Daytona Image: {daytona_image}")
+    elif terminal_env == "sprites":
+        api_base = os.getenv(
+            "TERMINAL_SPRITES_API_BASE",
+            terminal_cfg.get("sprites_api_base", "https://api.sprites.dev"),
+        )
+        name_prefix = os.getenv(
+            "TERMINAL_SPRITES_NAME_PREFIX",
+            terminal_cfg.get("sprites_name_prefix", "hermes"),
+        )
+        persistent = terminal_cfg.get("container_persistent", True)
+        print(f"  API Base:     {api_base}")
+        print(f"  Token:        {'configured' if os.getenv('SPRITES_TOKEN') else '(not set)'}")
+        print(f"  Name Prefix:  {name_prefix}")
+        print(f"  Persistent:   {'yes' if persistent else 'no'}")
 
     sudo_password = os.getenv("SUDO_PASSWORD", "")
     print(f"  Sudo:         {check_mark(bool(sudo_password))} {'enabled' if sudo_password else 'disabled'}")

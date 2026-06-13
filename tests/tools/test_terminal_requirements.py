@@ -16,12 +16,15 @@ def _clear_terminal_env(monkeypatch):
         "TERMINAL_DOCKER_VOLUMES",
         "TERMINAL_LIFETIME_SECONDS",
         "TERMINAL_MODAL_MODE",
+        "TERMINAL_SPRITES_API_BASE",
+        "TERMINAL_SPRITES_NAME_PREFIX",
         "TERMINAL_SSH_HOST",
         "TERMINAL_SSH_PORT",
         "TERMINAL_SSH_USER",
         "TERMINAL_TIMEOUT",
         "MODAL_TOKEN_ID",
         "MODAL_TOKEN_SECRET",
+        "SPRITES_TOKEN",
         "HOME",
         "USERPROFILE",
     ]
@@ -58,6 +61,60 @@ def test_unknown_terminal_env_logs_error_and_returns_false(monkeypatch, caplog):
         "Unknown TERMINAL_ENV 'unknown-backend'" in record.getMessage()
         for record in caplog.records
     )
+
+
+def test_sprites_backend_requires_token(monkeypatch, caplog):
+    _clear_terminal_env(monkeypatch)
+    monkeypatch.setenv("TERMINAL_ENV", "sprites")
+
+    with caplog.at_level(logging.ERROR):
+        ok = terminal_tool_module.check_terminal_requirements()
+
+    assert ok is False
+    assert any("SPRITES_TOKEN is not configured" in record.getMessage() for record in caplog.records)
+
+
+def test_sprites_backend_with_token_passes(monkeypatch):
+    _clear_terminal_env(monkeypatch)
+    monkeypatch.setenv("TERMINAL_ENV", "sprites")
+    monkeypatch.setenv("SPRITES_TOKEN", "tok")
+
+    assert terminal_tool_module.check_terminal_requirements() is True
+
+
+def test_create_environment_constructs_sprites(monkeypatch):
+    import tools.environments.sprites as sprites_mod
+
+    created = {}
+
+    class FakeSpritesEnvironment:
+        def __init__(self, **kwargs):
+            created.update(kwargs)
+
+    monkeypatch.setattr(sprites_mod, "SpritesEnvironment", FakeSpritesEnvironment)
+
+    env = terminal_tool_module._create_environment(
+        env_type="sprites",
+        image="ignored",
+        cwd="/home/sprite",
+        timeout=123,
+        container_config={
+            "container_persistent": True,
+            "sprites_api_base": "https://api.example.test",
+            "sprites_name_prefix": "custom",
+        },
+        task_id="task-123",
+    )
+
+    assert isinstance(env, FakeSpritesEnvironment)
+    assert created == {
+        "cwd": "/home/sprite",
+        "timeout": 123,
+        "persistent_filesystem": True,
+        "task_id": "task-123",
+        "api_base": "https://api.example.test",
+        "name_prefix": "custom",
+    }
 
 
 def test_ssh_backend_without_host_or_user_logs_and_returns_false(monkeypatch, caplog):

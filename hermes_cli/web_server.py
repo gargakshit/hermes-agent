@@ -430,7 +430,15 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "terminal.backend": {
         "type": "select",
         "description": "Terminal execution backend",
-        "options": ["local", "docker", "ssh", "modal", "daytona", "singularity"],
+        "options": ["local", "docker", "ssh", "modal", "daytona", "sprites", "singularity"],
+    },
+    "terminal.sprites_api_base": {
+        "type": "string",
+        "description": "Sprites API base URL",
+    },
+    "terminal.sprites_name_prefix": {
+        "type": "string",
+        "description": "Prefix for Hermes-managed Sprites",
     },
     "terminal.modal_mode": {
         "type": "select",

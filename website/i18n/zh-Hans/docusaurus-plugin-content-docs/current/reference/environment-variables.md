@@ -154,6 +154,7 @@ description: "Hermes Agent 使用的所有环境变量完整参考"
 | `HINDSIGHT_TIMEOUT` | Hindsight 内存提供商 API 调用超时（秒，默认：`60`）。如果 Hindsight 实例在 `/sync` 或 `on_session_switch` 期间响应缓慢并出现超时，请增大此值，并检查 `errors.log`。 |
 | `SUPERMEMORY_API_KEY` | 支持 profile 召回和会话摄取的语义长期记忆（[supermemory.ai](https://supermemory.ai)） |
 | `DAYTONA_API_KEY` | Daytona 云沙箱（[daytona.io](https://daytona.io/)） |
+| `SPRITES_TOKEN` | Sprites 持久 Linux 沙箱（[sprites.dev](https://sprites.dev/)） |
 
 ### Langfuse 可观测性
 
@@ -186,7 +187,7 @@ description: "Hermes Agent 使用的所有环境变量完整参考"
 
 | 变量 | 描述 |
 |----------|-------------|
-| `TERMINAL_ENV` | 后端：`local`、`docker`、`ssh`、`singularity`、`modal`、`daytona` |
+| `TERMINAL_ENV` | 后端：`local`、`docker`、`ssh`、`singularity`、`modal`、`daytona`、`sprites` |
 | `HERMES_DOCKER_BINARY` | 覆盖 Hermes 调用的容器二进制（例如 `podman`、`/usr/local/bin/docker`）。未设置时，Hermes 自动在 `PATH` 上发现 `docker` 或 `podman`。当两者都已安装且需要非默认选项，或二进制不在 `PATH` 中时使用。 |
 | `TERMINAL_DOCKER_IMAGE` | Docker 镜像（默认：`nikolaik/python-nodejs:python3.11-nodejs20`） |
 | `TERMINAL_DOCKER_FORWARD_ENV` | 显式转发到 Docker 终端会话的环境变量名 JSON 数组。注意：技能声明的 `required_environment_variables` 会自动转发——仅对未被任何技能声明的变量使用此项。 |

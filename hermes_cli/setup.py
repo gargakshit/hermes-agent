@@ -1150,11 +1150,12 @@ def setup_terminal_backend(config: dict):
         "Modal - serverless cloud sandbox",
         "SSH - run on a remote machine",
         "Daytona - persistent cloud development environment",
+        "Sprites - persistent hardware-isolated Linux sandbox",
     ]
-    idx_to_backend = {0: "local", 1: "docker", 2: "modal", 3: "ssh", 4: "daytona"}
-    backend_to_idx = {"local": 0, "docker": 1, "modal": 2, "ssh": 3, "daytona": 4}
+    idx_to_backend = {0: "local", 1: "docker", 2: "modal", 3: "ssh", 4: "daytona", 5: "sprites"}
+    backend_to_idx = {"local": 0, "docker": 1, "modal": 2, "ssh": 3, "daytona": 4, "sprites": 5}
 
-    next_idx = 5
+    next_idx = 6
     if is_linux:
         terminal_choices.append("Singularity/Apptainer - HPC-friendly container")
         idx_to_backend[next_idx] = "singularity"
@@ -1370,6 +1371,32 @@ def setup_terminal_backend(config: dict):
         config["terminal"].setdefault(
             "daytona_image", "nikolaik/python-nodejs:python3.11-nodejs20"
         )
+
+    elif selected_backend == "sprites":
+        print_success("Terminal backend: Sprites")
+        print_info("Persistent hardware-isolated Linux sandboxes.")
+        print_info("Sprites sleep automatically when idle and wake when Hermes connects.")
+        print_info("Sign up at: https://sprites.dev")
+
+        config["terminal"].setdefault("cwd", "/home/sprite")
+        config["terminal"].setdefault("sprites_api_base", "https://api.sprites.dev")
+        config["terminal"].setdefault("sprites_name_prefix", "hermes")
+        config["terminal"].setdefault("container_persistent", True)
+
+        print()
+        existing_token = get_env_value("SPRITES_TOKEN")
+        if existing_token:
+            print_info("  Sprites token: already configured")
+            if prompt_yes_no("  Update Sprites token?", False):
+                token = prompt("    Sprites token", password=True)
+                if token:
+                    save_env_value("SPRITES_TOKEN", token)
+                    print_success("    Updated")
+        else:
+            token = prompt("    Sprites token", password=True)
+            if token:
+                save_env_value("SPRITES_TOKEN", token)
+                print_success("    Configured")
 
     elif selected_backend == "ssh":
         print_success("Terminal backend: SSH")

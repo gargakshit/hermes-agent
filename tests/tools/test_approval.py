@@ -1608,3 +1608,12 @@ class TestApprovalTimeoutIsNotConsent:
         assert last_post.get("choice") == "timeout", (
             f"hook choice should be 'timeout' on no-response, got {last_post.get('choice')!r}"
         )
+
+
+def test_sprites_backend_bypasses_host_dangerous_command_prompt():
+    from tools import approval as mod
+
+    result = mod.check_all_command_guards("rm -rf .git", "sprites")
+
+    assert result["approved"] is True
+    assert result["message"] is None

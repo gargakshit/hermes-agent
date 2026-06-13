@@ -9,6 +9,7 @@ import sys
 import subprocess
 import shutil
 from pathlib import Path
+from urllib.parse import urlparse
 
 from hermes_cli.config import get_project_root, get_hermes_home, get_env_path
 from hermes_cli.env_loader import load_hermes_dotenv
@@ -1425,6 +1426,54 @@ def run_doctor(args):
                 "Install daytona SDK: pip install daytona",
                 issues,
             )
+
+    # Sprites (if using sprites backend)
+    if terminal_env == "sprites":
+        sprites_token = os.getenv("SPRITES_TOKEN")
+        if sprites_token:
+            check_ok("Sprites token", "(configured)")
+        else:
+            _fail_and_issue(
+                "SPRITES_TOKEN not set",
+                "(required for TERMINAL_ENV=sprites)",
+                "Set SPRITES_TOKEN in .env",
+                issues,
+            )
+
+        api_base = os.getenv("TERMINAL_SPRITES_API_BASE", "https://api.sprites.dev")
+        parsed = urlparse(api_base)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            check_ok("Sprites API base", f"({api_base})")
+        else:
+            _fail_and_issue(
+                "Sprites API base is invalid",
+                f"({api_base})",
+                "Set terminal.sprites_api_base to a valid http(s) URL",
+                issues,
+            )
+
+        if sprites_token and parsed.scheme in {"http", "https"} and parsed.netloc:
+            try:
+                import httpx
+
+                response = httpx.get(
+                    f"{api_base.rstrip('/')}/v1/sprites",
+                    headers={"Authorization": f"Bearer {sprites_token}"},
+                    timeout=5,
+                )
+                if response.status_code in {200, 204}:
+                    check_ok("Sprites API", "(authenticated)")
+                elif response.status_code in {401, 403}:
+                    _fail_and_issue(
+                        "Sprites API authentication failed",
+                        f"(HTTP {response.status_code})",
+                        "Check SPRITES_TOKEN in .env",
+                        issues,
+                    )
+                else:
+                    check_warn("Sprites API probe returned", f"(HTTP {response.status_code})")
+            except Exception as exc:
+                check_warn("Sprites API probe skipped", f"({exc})")
 
     # Node.js + agent-browser (for browser automation tools)
     if _safe_which("node"):

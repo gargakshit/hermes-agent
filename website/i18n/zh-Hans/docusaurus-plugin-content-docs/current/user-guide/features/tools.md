@@ -65,13 +65,14 @@ hermes tools
 | `singularity` | HPC 容器 | 集群计算、无 root 权限 |
 | `modal` | 云端执行 | 无服务器、弹性扩展 |
 | `daytona` | 云端沙箱工作区 | 持久化远程开发环境 |
+| `sprites` | 持久硬件隔离 Linux 沙箱 | 持久远程 agent 工作区 |
 
 ### 配置
 
 ```yaml
 # 在 ~/.hermes/config.yaml 中
 terminal:
-  backend: local    # 或：docker, ssh, singularity, modal, daytona
+  backend: local    # 或：docker, ssh, singularity, modal, daytona, sprites
   cwd: "."          # 工作目录
   timeout: 180      # 命令超时时间（秒）
 ```
@@ -122,13 +123,25 @@ modal setup
 hermes config set terminal.backend modal
 ```
 
+### Sprites
+
+```yaml
+terminal:
+  backend: sprites
+  cwd: /home/sprite
+  sprites_api_base: https://api.sprites.dev
+  sprites_name_prefix: hermes
+```
+
+在 `~/.hermes/.env` 中设置 `SPRITES_TOKEN`。Sprites 是持久的，空闲时会自动休眠；Hermes 在每条命令结束后关闭连接，并且不会在持久清理时停止或销毁 Sprite。
+
 ### 容器资源
 
 为所有容器后端配置 CPU、内存、磁盘和持久化：
 
 ```yaml
 terminal:
-  backend: docker  # 或 singularity, modal, daytona
+  backend: docker  # 或 singularity, modal, daytona, sprites
   container_cpu: 1              # CPU 核心数（默认：1）
   container_memory: 5120        # 内存（MB，默认：5GB）
   container_disk: 51200         # 磁盘（MB，默认：50GB）

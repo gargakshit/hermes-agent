@@ -641,7 +641,7 @@ def _get_or_create_env(task_id: str):
         cwd = overrides.get("cwd") or config["cwd"]
 
         container_config = None
-        if env_type in {"docker", "singularity", "modal", "daytona"}:
+        if env_type in {"docker", "singularity", "modal", "daytona", "sprites"}:
             container_config = {
                 "container_cpu": config.get("container_cpu", 1),
                 "container_memory": config.get("container_memory", 5120),
@@ -649,6 +649,8 @@ def _get_or_create_env(task_id: str):
                 "container_persistent": config.get("container_persistent", True),
                 "docker_volumes": config.get("docker_volumes", []),
                 "docker_run_as_host_user": config.get("docker_run_as_host_user", False),
+                "sprites_api_base": config.get("sprites_api_base", "https://api.sprites.dev"),
+                "sprites_name_prefix": config.get("sprites_name_prefix", "hermes"),
             }
 
         ssh_config = None

@@ -260,7 +260,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # strategy without discovering by failure.  Emits a single line; emits
     # NOTHING when the environment is clean (no token cost).  Skipped
     # entirely for remote terminal backends (the host's Python state is
-    # irrelevant when tools run inside docker/modal/ssh).  Gated by
+    # irrelevant when tools run inside docker/modal/ssh/sprites/etc.).  Gated by
     # config.yaml ``agent.environment_probe`` (default True).
     if getattr(agent, "_environment_probe", True):
         try:

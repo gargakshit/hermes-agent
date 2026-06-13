@@ -65,13 +65,14 @@ The terminal tool can execute commands in different environments:
 | `singularity` | HPC containers | Cluster computing, rootless |
 | `modal` | Cloud execution | Serverless, scale |
 | `daytona` | Cloud sandbox workspace | Persistent remote dev environments |
+| `sprites` | Persistent hardware-isolated Linux sandbox | Durable remote agent workspace |
 
 ### Configuration
 
 ```yaml
 # In ~/.hermes/config.yaml
 terminal:
-  backend: local    # or: docker, ssh, singularity, modal, daytona
+  backend: local    # or: docker, ssh, singularity, modal, daytona, sprites
   cwd: "."          # Working directory
   timeout: 180      # Command timeout in seconds
 ```
@@ -122,13 +123,25 @@ modal setup
 hermes config set terminal.backend modal
 ```
 
+### Sprites
+
+```yaml
+terminal:
+  backend: sprites
+  cwd: /home/sprite
+  sprites_api_base: https://api.sprites.dev
+  sprites_name_prefix: hermes
+```
+
+Set `SPRITES_TOKEN` in `~/.hermes/.env`. Sprites are persistent and sleep automatically when idle; Hermes closes each command connection after the command exits and does not stop or destroy persistent Sprites during cleanup.
+
 ### Container Resources
 
 Configure CPU, memory, disk, and persistence for all container backends:
 
 ```yaml
 terminal:
-  backend: docker  # or singularity, modal, daytona
+  backend: docker  # or singularity, modal, daytona, sprites
   container_cpu: 1              # CPU cores (default: 1)
   container_memory: 5120        # Memory in MB (default: 5GB)
   container_disk: 51200         # Disk in MB (default: 50GB)

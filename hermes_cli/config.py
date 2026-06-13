@@ -858,7 +858,7 @@ DEFAULT_CONFIG = {
         # (e.g. python3 has no pip module, pip→python version mismatch, PEP
         # 668 enforcement without uv).  Costs zero tokens when the env is
         # clean (probe emits nothing).  Skipped for remote terminal backends
-        # (docker/modal/ssh — they have their own probe).  Set False to
+        # (docker/modal/ssh/sprites/etc. — they have their own probe).  Set False to
         # disable entirely.
         "environment_probe": True,
         # Embedder-supplied environment description appended to the system
@@ -978,7 +978,9 @@ DEFAULT_CONFIG = {
         "singularity_image": "docker://nikolaik/python-nodejs:python3.11-nodejs20",
         "modal_image": "nikolaik/python-nodejs:python3.11-nodejs20",
         "daytona_image": "nikolaik/python-nodejs:python3.11-nodejs20",
-        # Container resource limits (docker, singularity, modal, daytona — ignored for local/ssh)
+        "sprites_api_base": "https://api.sprites.dev",
+        "sprites_name_prefix": "hermes",
+        # Container resource limits (docker, singularity, modal, daytona, sprites — ignored for local/ssh)
         "container_cpu": 1,
         "container_memory": 5120,       # MB (default 5GB)
         "container_disk": 51200,        # MB (default 50GB)
@@ -5272,6 +5274,8 @@ TERMINAL_CONFIG_ENV_MAP = {
     "singularity_image": "TERMINAL_SINGULARITY_IMAGE",
     "modal_image": "TERMINAL_MODAL_IMAGE",
     "daytona_image": "TERMINAL_DAYTONA_IMAGE",
+    "sprites_api_base": "TERMINAL_SPRITES_API_BASE",
+    "sprites_name_prefix": "TERMINAL_SPRITES_NAME_PREFIX",
     "ssh_host": "TERMINAL_SSH_HOST",
     "ssh_user": "TERMINAL_SSH_USER",
     "ssh_port": "TERMINAL_SSH_PORT",
@@ -6054,6 +6058,11 @@ def show_config():
         print(f"  Daytona image: {terminal.get('daytona_image', 'nikolaik/python-nodejs:python3.11-nodejs20')}")
         daytona_key = get_env_value('DAYTONA_API_KEY')
         print(f"  API key:      {'configured' if daytona_key else '(not set)'}")
+    elif terminal.get('backend') == 'sprites':
+        print(f"  API base:     {terminal.get('sprites_api_base', 'https://api.sprites.dev')}")
+        print(f"  Name prefix:  {terminal.get('sprites_name_prefix', 'hermes')}")
+        sprites_token = get_env_value('SPRITES_TOKEN')
+        print(f"  Token:        {'configured' if sprites_token else '(not set)'}")
     elif terminal.get('backend') == 'ssh':
         ssh_host = get_env_value('TERMINAL_SSH_HOST')
         ssh_user = get_env_value('TERMINAL_SSH_USER')

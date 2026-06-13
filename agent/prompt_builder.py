@@ -185,7 +185,7 @@ KANBAN_GUIDANCE = (
     "`$HERMES_KANBAN_TASK`; your workspace is `$HERMES_KANBAN_WORKSPACE`. "
     "The `kanban_*` tools in your schema are your primary coordination surface — "
     "they write directly to the shared SQLite DB and work regardless of terminal "
-    "backend (local/docker/modal/ssh).\n"
+    "backend (local/docker/modal/sprites/ssh).\n"
     "\n"
     "## Lifecycle\n"
     "\n"
@@ -700,7 +700,7 @@ WSL_ENVIRONMENT_HINT = (
 # runs. For these backends, host info (Windows/Linux/macOS, $HOME, cwd) is
 # misleading — the agent should only see the machine it can actually touch.
 _REMOTE_TERMINAL_BACKENDS = frozenset({
-    "docker", "singularity", "modal", "daytona", "ssh",
+    "docker", "singularity", "modal", "daytona", "sprites", "ssh",
     "managed_modal",
 })
 
@@ -715,6 +715,7 @@ _BACKEND_FALLBACK_DESCRIPTIONS: dict[str, str] = {
     "modal": "a Modal sandbox (Linux)",
     "managed_modal": "a managed Modal sandbox (Linux)",
     "daytona": "a Daytona workspace (Linux)",
+    "sprites": "a Sprites Linux sandbox",
     "ssh": "a remote host reached over SSH (likely Linux)",
 }
 
@@ -828,7 +829,7 @@ def build_environment_hints() -> str:
       and a Windows-only note that `terminal` shells out to bash, not
       PowerShell).
     - For **remote / sandbox** terminal backends (docker, singularity,
-      modal, daytona, ssh): host info is **suppressed**
+      modal, daytona, sprites, ssh): host info is **suppressed**
       because the agent's tools can't touch the host — only the backend
       matters. A live probe inside the backend reports its OS, user, $HOME,
       and cwd. Falls back to a static summary if the probe fails.

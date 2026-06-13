@@ -112,6 +112,18 @@ class TestCwdHandling:
             f"Backend {backend}: expected /root default, got {config['cwd']}"
         )
 
+    def test_default_cwd_is_sprite_home_for_sprites(self, monkeypatch):
+        monkeypatch.setenv("TERMINAL_ENV", "sprites")
+        monkeypatch.delenv("TERMINAL_CWD", raising=False)
+        config = _tt_mod._get_env_config()
+        assert config["cwd"] == "/home/sprite"
+
+    def test_host_path_replaced_for_sprites(self, monkeypatch):
+        monkeypatch.setenv("TERMINAL_ENV", "sprites")
+        monkeypatch.setenv("TERMINAL_CWD", "/Users/someone/projects")
+        config = _tt_mod._get_env_config()
+        assert config["cwd"] == "/home/sprite"
+
     def test_docker_default_cwd_maps_current_directory_when_enabled(self, monkeypatch):
         """Docker should use /workspace when cwd mounting is explicitly enabled."""
         monkeypatch.setattr("tools.terminal_tool.os.getcwd", lambda: "/home/user/project")

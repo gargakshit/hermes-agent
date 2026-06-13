@@ -3,16 +3,20 @@
 Terminal Tool Module
 
 A terminal tool that executes commands in local, Docker, Modal, SSH,
-Singularity, and Daytona environments. Supports local execution,
+Singularity, Daytona, and Sprites environments. Supports local execution,
 containerized backends, and cloud sandboxes, including managed Modal mode.
 
 Supported environments:
 - "local": Execute directly on the host machine (default, fastest)
 - "docker": Execute in Docker containers (isolated, requires Docker)
+- "singularity": Execute in Singularity/Apptainer containers (HPC-friendly)
 - "modal": Execute in Modal cloud sandboxes (direct Modal or managed gateway)
+- "daytona": Execute in Daytona cloud workspaces
+- "sprites": Execute in persistent Sprites Linux sandboxes (requires SPRITES_TOKEN)
+- "ssh": Execute on a configured remote host over SSH
 
 Features:
-- Multiple execution backends (local, docker, modal)
+- Multiple execution backends (local, docker, ssh, daytona, modal, singularity, sprites)
 - Background task support
 - VM/container lifecycle management
 - Automatic cleanup after inactivity
@@ -773,7 +777,7 @@ def _transform_sudo_command(command: str | None) -> tuple[str | None, str | None
     should prepend sudo_stdin to their stdin_data and pass the merged bytes to
     Popen's stdin pipe.
 
-    Callers that cannot pipe subprocess stdin (modal, daytona) must embed
+    Callers that cannot pipe subprocess stdin (modal, daytona, sprites) must embed
     the password in the command string themselves; see their execute()
     methods for how they handle the non-None sudo_stdin case.
 
@@ -1073,7 +1077,7 @@ def _get_env_config() -> Dict[str, Any]:
     env_type = os.getenv("TERMINAL_ENV", "local")
     
     mount_docker_cwd = os.getenv("TERMINAL_DOCKER_MOUNT_CWD_TO_WORKSPACE", "false").lower() in {"true", "1", "yes"}
-    container_backend = env_type in {"docker", "singularity", "modal", "daytona"}
+    container_backend = env_type in {"docker", "singularity", "modal", "daytona", "sprites"}
     docker_backend = env_type == "docker"
 
     # Docker/container-only env vars may be bridged from config.yaml even when
@@ -1107,6 +1111,8 @@ def _get_env_config() -> Dict[str, Any]:
         default_cwd = _safe_getcwd()
     elif env_type == "ssh":
         default_cwd = "~"
+    elif env_type == "sprites":
+        default_cwd = "/home/sprite"
     else:
         default_cwd = "/root"
 
@@ -1128,7 +1134,7 @@ def _get_env_config() -> Dict[str, Any]:
         ):
             host_cwd = candidate
             cwd = "/workspace"
-    elif env_type in {"modal", "docker", "singularity", "daytona"} and cwd:
+    elif env_type in {"modal", "docker", "singularity", "daytona", "sprites"} and cwd:
         # Host paths and relative paths that won't work inside containers
         is_host_path = any(cwd.startswith(p) for p in host_prefixes)
         is_relative = not os.path.isabs(cwd)  # e.g. "." or "src/"
@@ -1146,6 +1152,8 @@ def _get_env_config() -> Dict[str, Any]:
         "singularity_image": os.getenv("TERMINAL_SINGULARITY_IMAGE", f"docker://{default_image}"),
         "modal_image": os.getenv("TERMINAL_MODAL_IMAGE", default_image),
         "daytona_image": os.getenv("TERMINAL_DAYTONA_IMAGE", default_image),
+        "sprites_api_base": os.getenv("TERMINAL_SPRITES_API_BASE", "https://api.sprites.dev"),
+        "sprites_name_prefix": os.getenv("TERMINAL_SPRITES_NAME_PREFIX", "hermes"),
         "cwd": cwd,
         "host_cwd": host_cwd,
         "docker_mount_cwd_to_workspace": mount_docker_cwd,
@@ -1165,7 +1173,7 @@ def _get_env_config() -> Dict[str, Any]:
         ).lower() in {"true", "1", "yes"},
         "local_persistent": os.getenv("TERMINAL_LOCAL_PERSISTENT", "false").lower() in {"true", "1", "yes"},
         # Container resource config (applies to docker, singularity, modal,
-        # daytona -- ignored for local/ssh)
+        # daytona, sprites -- ignored for local/ssh)
         "container_cpu": container_cpu,
         "container_memory": container_memory,     # MB (default 5GB)
         "container_disk": container_disk,        # MB (default 50GB)
@@ -1212,7 +1220,7 @@ def _create_environment(env_type: str, image: str, cwd: str, timeout: int,
     
     Args:
         env_type: One of "local", "docker", "singularity", "modal",
-            "daytona", "ssh"
+            "daytona", "sprites", "ssh"
         image: Docker/Singularity/Modal image name (ignored for local/ssh)
         cwd: Working directory
         timeout: Default command timeout
@@ -1333,6 +1341,18 @@ def _create_environment(env_type: str, image: str, cwd: str, timeout: int,
             persistent_filesystem=persistent, task_id=task_id,
         )
 
+    elif env_type == "sprites":
+        from tools.environments.sprites import SpritesEnvironment as _SpritesEnvironment
+
+        return _SpritesEnvironment(
+            cwd=cwd,
+            timeout=timeout,
+            persistent_filesystem=persistent,
+            task_id=task_id,
+            api_base=cc.get("sprites_api_base", "https://api.sprites.dev"),
+            name_prefix=cc.get("sprites_name_prefix", "hermes"),
+        )
+
     elif env_type == "ssh":
         if not ssh_config or not ssh_config.get("host") or not ssh_config.get("user"):
             raise ValueError("SSH environment requires ssh_host and ssh_user to be configured")
@@ -1348,7 +1368,7 @@ def _create_environment(env_type: str, image: str, cwd: str, timeout: int,
     else:
         raise ValueError(
             f"Unknown environment type: {env_type}. Use 'local', 'docker', "
-            f"'singularity', 'modal', 'daytona', or 'ssh'"
+            f"'singularity', 'modal', 'daytona', 'sprites', or 'ssh'"
         )
 
 
@@ -1998,7 +2018,7 @@ def terminal_tool(
                             }
 
                         container_config = None
-                        if env_type in {"docker", "singularity", "modal", "daytona"}:
+                        if env_type in {"docker", "singularity", "modal", "daytona", "sprites"}:
                             container_config = {
                                 "container_cpu": config.get("container_cpu", 1),
                                 "container_memory": config.get("container_memory", 5120),
@@ -2013,6 +2033,8 @@ def terminal_tool(
                                 "docker_extra_args": config.get("docker_extra_args", []),
                                 "docker_persist_across_processes": config.get("docker_persist_across_processes", True),
                                 "docker_orphan_reaper": config.get("docker_orphan_reaper", True),
+                                "sprites_api_base": config.get("sprites_api_base", "https://api.sprites.dev"),
+                                "sprites_name_prefix": config.get("sprites_name_prefix", "hermes"),
                             }
 
                         local_config = None
@@ -2551,10 +2573,19 @@ def check_terminal_requirements() -> bool:
             from daytona import Daytona  # noqa: F401 — SDK presence check
             return os.getenv("DAYTONA_API_KEY") is not None
 
+        elif env_type == "sprites":
+            if not os.getenv("SPRITES_TOKEN"):
+                logger.error(
+                    "Sprites backend selected but SPRITES_TOKEN is not configured. "
+                    "Add SPRITES_TOKEN to ~/.hermes/.env or choose a different TERMINAL_ENV."
+                )
+                return False
+            return True
+
         else:
             logger.error(
                 "Unknown TERMINAL_ENV '%s'. Use one of: local, docker, singularity, "
-                "modal, daytona, ssh.",
+                "modal, daytona, sprites, ssh.",
                 env_type,
             )
             return False
@@ -2573,6 +2604,7 @@ if __name__ == "__main__":
     print(f"  Environment type: {config['env_type']}")
     print(f"  Docker image: {config['docker_image']}")
     print(f"  Modal image: {config['modal_image']}")
+    print(f"  Sprites API base: {config['sprites_api_base']}")
     print(f"  Working directory: {config['cwd']}")
     print(f"  Default timeout: {config['timeout']}s")
     print(f"  Lifetime: {config['lifetime_seconds']}s")
@@ -2597,12 +2629,13 @@ if __name__ == "__main__":
     print(
         "  TERMINAL_ENV: "
         f"{os.getenv('TERMINAL_ENV', 'local')} "
-        "(local/docker/singularity/modal/daytona/ssh)"
+        "(local/docker/singularity/modal/daytona/sprites/ssh)"
     )
     print(f"  TERMINAL_DOCKER_IMAGE: {os.getenv('TERMINAL_DOCKER_IMAGE', default_img)}")
     print(f"  TERMINAL_SINGULARITY_IMAGE: {os.getenv('TERMINAL_SINGULARITY_IMAGE', f'docker://{default_img}')}")
     print(f"  TERMINAL_MODAL_IMAGE: {os.getenv('TERMINAL_MODAL_IMAGE', default_img)}")
     print(f"  TERMINAL_DAYTONA_IMAGE: {os.getenv('TERMINAL_DAYTONA_IMAGE', default_img)}")
+    print(f"  TERMINAL_SPRITES_API_BASE: {os.getenv('TERMINAL_SPRITES_API_BASE', 'https://api.sprites.dev')}")
     print(f"  TERMINAL_CWD: {os.getenv('TERMINAL_CWD', _safe_getcwd())}")
     from hermes_constants import display_hermes_home as _dhh
     print(f"  TERMINAL_SANDBOX_DIR: {os.getenv('TERMINAL_SANDBOX_DIR', f'{_dhh()}/sandboxes')}")

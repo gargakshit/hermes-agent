@@ -116,6 +116,10 @@ class TestSkipsRemoteBackends:
         monkeypatch.setenv("TERMINAL_ENV", "ssh")
         assert env_probe.get_environment_probe_line() == ""
 
+    def test_sprites_returns_empty(self, monkeypatch):
+        monkeypatch.setenv("TERMINAL_ENV", "sprites")
+        assert env_probe.get_environment_probe_line() == ""
+
 
 class TestCaching:
     """The probe runs once per process — the result is deterministic for

@@ -301,3 +301,21 @@ def test_docker_forward_env_is_bridged_everywhere():
     assert "docker_forward_env" in _gateway_env_map_keys()
     assert "docker_forward_env" in _save_config_env_sync_keys()
     assert "TERMINAL_DOCKER_FORWARD_ENV" in _terminal_tool_env_var_names()
+
+
+def test_sprites_config_is_bridged_everywhere():
+    """Sprites backend config must follow the same four-site bridge contract.
+
+    ``SPRITES_TOKEN`` stays in .env as a secret; the non-secret API base and
+    naming prefix live under terminal.* in config.yaml and are mirrored into
+    internal TERMINAL_* vars for terminal_tool.
+    """
+    assert "sprites_api_base" in _cli_env_map_keys()
+    assert "sprites_api_base" in _gateway_env_map_keys()
+    assert "sprites_api_base" in _save_config_env_sync_keys()
+    assert "TERMINAL_SPRITES_API_BASE" in _terminal_tool_env_var_names()
+
+    assert "sprites_name_prefix" in _cli_env_map_keys()
+    assert "sprites_name_prefix" in _gateway_env_map_keys()
+    assert "sprites_name_prefix" in _save_config_env_sync_keys()
+    assert "TERMINAL_SPRITES_NAME_PREFIX" in _terminal_tool_env_var_names()
