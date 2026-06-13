@@ -95,6 +95,7 @@ terminal:
   modal_image: "nikolaik/python-nodejs:python3.11-nodejs20"                 # Modal 后端的容器镜像
   daytona_image: "nikolaik/python-nodejs:python3.11-nodejs20"               # Daytona 后端的容器镜像
   sprites_api_base: "https://api.sprites.dev"                               # Sprites API 端点
+  sprites_namespace: ""                                                     # Sprite 名称命名空间（留空 = 根据 token 自动生成）
   sprites_name_prefix: "hermes"                                             # Hermes 管理的 Sprite 名称前缀
 ```
 
@@ -245,6 +246,7 @@ terminal:
   timeout: 180
   container_persistent: true
   sprites_api_base: https://api.sprites.dev
+  sprites_namespace: ""   # 留空 = 根据 SPRITES_TOKEN 哈希自动生成
   sprites_name_prefix: hermes
 ```
 

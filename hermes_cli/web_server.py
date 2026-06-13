@@ -436,6 +436,10 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
         "type": "string",
         "description": "Sprites API base URL",
     },
+    "terminal.sprites_namespace": {
+        "type": "string",
+        "description": "Namespace for globally unique Sprite names (blank = auto)",
+    },
     "terminal.sprites_name_prefix": {
         "type": "string",
         "description": "Prefix for Hermes-managed Sprites",

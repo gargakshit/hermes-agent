@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CWD = "/home/sprite"
 _DEFAULT_API_BASE = "https://api.sprites.dev"
 _MAX_SPRITE_NAME_LENGTH = 63
+_DEFAULT_NAMESPACE_HASH_LENGTH = 10
 _NAME_PART_RE = re.compile(r"[^a-z0-9-]+")
 _DASH_RE = re.compile(r"-+")
 
@@ -74,23 +75,48 @@ def _get_active_profile_name() -> str:
         return "default"
 
 
-def _build_sprite_name(prefix: str, task_id: str) -> str:
-    prefix_slug = _slug(prefix, default="hermes", max_len=24)
-    profile_slug = _slug(_get_active_profile_name(), default="default", max_len=20)
+def _namespace_from_token(token: str | None) -> str:
+    token = (token or "").strip()
+    if not token:
+        return "default"
+    digest = sha1(token.encode("utf-8")).hexdigest()[:_DEFAULT_NAMESPACE_HASH_LENGTH]
+    return f"u{digest}"
+
+
+def _resolve_namespace(namespace: str | None = None, *, token: str | None = None) -> str:
+    configured = namespace if namespace is not None else os.getenv("TERMINAL_SPRITES_NAMESPACE", "")
+    configured_slug = _slug(str(configured or ""), default="", max_len=18)
+    if configured_slug:
+        return configured_slug
+    return _namespace_from_token(token if token is not None else os.getenv("SPRITES_TOKEN", ""))
+
+
+def _build_sprite_name(
+    prefix: str,
+    task_id: str,
+    *,
+    namespace: str | None = None,
+    token: str | None = None,
+) -> str:
+    namespace_slug = _resolve_namespace(namespace, token=token)
+    prefix_slug = _slug(prefix, default="hermes", max_len=18)
+    profile_slug = _slug(_get_active_profile_name(), default="default", max_len=18)
     task_slug = _slug(task_id, default="default", max_len=24)
-    raw = f"{prefix_slug}-{profile_slug}-{task_slug}"
+    raw = f"{namespace_slug}-{prefix_slug}-{profile_slug}-{task_slug}"
     if len(raw) <= _MAX_SPRITE_NAME_LENGTH:
         return raw
 
     digest = sha1(raw.encode("utf-8")).hexdigest()[:8]
     suffix = f"-{digest}"
     budget = _MAX_SPRITE_NAME_LENGTH - len(suffix)
-    # Keep all three semantic pieces visible, then append a stable collision
-    # guard when long profile/task names need truncation.
-    prefix_budget = min(len(prefix_slug), max(8, budget // 3))
-    profile_budget = min(len(profile_slug), max(8, budget // 3))
-    task_budget = max(8, budget - prefix_budget - profile_budget - 2)
+    # Keep all semantic pieces visible, then append a stable collision guard
+    # when long namespace/profile/task names need truncation.
+    namespace_budget = min(len(namespace_slug), max(8, budget // 4))
+    prefix_budget = min(len(prefix_slug), max(8, budget // 4))
+    profile_budget = min(len(profile_slug), max(8, budget // 4))
+    task_budget = max(8, budget - namespace_budget - prefix_budget - profile_budget - 3)
     shortened = (
+        f"{namespace_slug[:namespace_budget]}-"
         f"{prefix_slug[:prefix_budget]}-"
         f"{profile_slug[:profile_budget]}-"
         f"{task_slug[:task_budget]}"
@@ -398,6 +424,7 @@ class SpritesEnvironment(BaseEnvironment):
         persistent_filesystem: bool = True,
         task_id: str = "default",
         api_base: str = _DEFAULT_API_BASE,
+        namespace: str | None = None,
         name_prefix: str = "hermes",
     ):
         requested_cwd = cwd
@@ -410,7 +437,12 @@ class SpritesEnvironment(BaseEnvironment):
         self._persistent = bool(persistent_filesystem)
         self._task_id = task_id or "default"
         self._remote_home = _DEFAULT_CWD
-        self._sprite_name = _build_sprite_name(name_prefix, self._task_id)
+        self._sprite_name = _build_sprite_name(
+            name_prefix,
+            self._task_id,
+            namespace=namespace,
+            token=token,
+        )
         self._client = _SpritesClient(token=token, api_base=api_base)
         self._active_handles: set[_SpritesProcessHandle] = set()
         self._active_lock = threading.Lock()

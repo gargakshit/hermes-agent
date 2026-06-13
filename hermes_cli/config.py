@@ -979,6 +979,7 @@ DEFAULT_CONFIG = {
         "modal_image": "nikolaik/python-nodejs:python3.11-nodejs20",
         "daytona_image": "nikolaik/python-nodejs:python3.11-nodejs20",
         "sprites_api_base": "https://api.sprites.dev",
+        "sprites_namespace": "",
         "sprites_name_prefix": "hermes",
         # Container resource limits (docker, singularity, modal, daytona, sprites — ignored for local/ssh)
         "container_cpu": 1,
@@ -5275,6 +5276,7 @@ TERMINAL_CONFIG_ENV_MAP = {
     "modal_image": "TERMINAL_MODAL_IMAGE",
     "daytona_image": "TERMINAL_DAYTONA_IMAGE",
     "sprites_api_base": "TERMINAL_SPRITES_API_BASE",
+    "sprites_namespace": "TERMINAL_SPRITES_NAMESPACE",
     "sprites_name_prefix": "TERMINAL_SPRITES_NAME_PREFIX",
     "ssh_host": "TERMINAL_SSH_HOST",
     "ssh_user": "TERMINAL_SSH_USER",
@@ -6060,6 +6062,8 @@ def show_config():
         print(f"  API key:      {'configured' if daytona_key else '(not set)'}")
     elif terminal.get('backend') == 'sprites':
         print(f"  API base:     {terminal.get('sprites_api_base', 'https://api.sprites.dev')}")
+        namespace = terminal.get('sprites_namespace') or '(auto from token)'
+        print(f"  Namespace:    {namespace}")
         print(f"  Name prefix:  {terminal.get('sprites_name_prefix', 'hermes')}")
         sprites_token = get_env_value('SPRITES_TOKEN')
         print(f"  Token:        {'configured' if sprites_token else '(not set)'}")

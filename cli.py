@@ -596,6 +596,7 @@ def load_cli_config() -> Dict[str, Any]:
         "modal_image": "TERMINAL_MODAL_IMAGE",
         "daytona_image": "TERMINAL_DAYTONA_IMAGE",
         "sprites_api_base": "TERMINAL_SPRITES_API_BASE",
+        "sprites_namespace": "TERMINAL_SPRITES_NAMESPACE",
         "sprites_name_prefix": "TERMINAL_SPRITES_NAME_PREFIX",
         # SSH config
         "ssh_host": "TERMINAL_SSH_HOST",

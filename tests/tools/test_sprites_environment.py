@@ -122,18 +122,18 @@ def test_create_if_missing_flow(sprites_module, monkeypatch):
     client = _FakeClient()
     env = _make_env(sprites_module, monkeypatch, client=client, task_id="task-1")
 
-    assert client.created == ["hermes-default-task-1"]
-    assert env.sprite_name == "hermes-default-task-1"
+    assert client.created == ["u79bead8e6d-hermes-default-task-1"]
+    assert env.sprite_name == "u79bead8e6d-hermes-default-task-1"
 
 
 def test_reuse_existing_sprite(sprites_module, monkeypatch):
     client = _FakeClient()
-    client.sprite = {"name": "hermes-default-default", "status": "cold"}
+    client.sprite = {"name": "u79bead8e6d-hermes-default-default", "status": "cold"}
 
     env = _make_env(sprites_module, monkeypatch, client=client)
 
     assert client.created == []
-    assert env.sprite_name == "hermes-default-default"
+    assert env.sprite_name == "u79bead8e6d-hermes-default-default"
 
 
 def test_detected_home_updates_default_cwd(sprites_module, monkeypatch):
@@ -245,4 +245,16 @@ def test_sprite_name_is_bounded_and_deterministic(sprites_module, monkeypatch):
 
     assert name1 == name2
     assert len(name1) <= 63
-    assert name1.startswith("hermes-research-profile-task-with-spaces")
+    assert name1.startswith("u79bead8e6d-hermes-research-profile-task-with-spaces")
+
+
+def test_explicit_namespace_wins_over_token_hash(sprites_module, monkeypatch):
+    monkeypatch.setattr(sprites_module, "_get_active_profile_name", lambda: "Research Profile")
+
+    name = sprites_module._build_sprite_name(
+        "Hermes",
+        "Task With Spaces",
+        namespace="Acme Team",
+    )
+
+    assert name == "acme-team-hermes-research-profile-task-with-spaces"

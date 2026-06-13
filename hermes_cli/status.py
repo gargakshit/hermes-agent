@@ -422,9 +422,14 @@ def show_status(args):
             "TERMINAL_SPRITES_NAME_PREFIX",
             terminal_cfg.get("sprites_name_prefix", "hermes"),
         )
+        namespace = os.getenv(
+            "TERMINAL_SPRITES_NAMESPACE",
+            terminal_cfg.get("sprites_namespace", ""),
+        ) or "(auto from token)"
         persistent = terminal_cfg.get("container_persistent", True)
         print(f"  API Base:     {api_base}")
         print(f"  Token:        {'configured' if os.getenv('SPRITES_TOKEN') else '(not set)'}")
+        print(f"  Namespace:    {namespace}")
         print(f"  Name Prefix:  {name_prefix}")
         print(f"  Persistent:   {'yes' if persistent else 'no'}")
 

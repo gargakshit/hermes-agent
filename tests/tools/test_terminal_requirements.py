@@ -17,6 +17,7 @@ def _clear_terminal_env(monkeypatch):
         "TERMINAL_LIFETIME_SECONDS",
         "TERMINAL_MODAL_MODE",
         "TERMINAL_SPRITES_API_BASE",
+        "TERMINAL_SPRITES_NAMESPACE",
         "TERMINAL_SPRITES_NAME_PREFIX",
         "TERMINAL_SSH_HOST",
         "TERMINAL_SSH_PORT",
@@ -101,6 +102,7 @@ def test_create_environment_constructs_sprites(monkeypatch):
         container_config={
             "container_persistent": True,
             "sprites_api_base": "https://api.example.test",
+            "sprites_namespace": "team",
             "sprites_name_prefix": "custom",
         },
         task_id="task-123",
@@ -113,6 +115,7 @@ def test_create_environment_constructs_sprites(monkeypatch):
         "persistent_filesystem": True,
         "task_id": "task-123",
         "api_base": "https://api.example.test",
+        "namespace": "team",
         "name_prefix": "custom",
     }
 

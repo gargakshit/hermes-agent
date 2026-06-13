@@ -1153,6 +1153,7 @@ def _get_env_config() -> Dict[str, Any]:
         "modal_image": os.getenv("TERMINAL_MODAL_IMAGE", default_image),
         "daytona_image": os.getenv("TERMINAL_DAYTONA_IMAGE", default_image),
         "sprites_api_base": os.getenv("TERMINAL_SPRITES_API_BASE", "https://api.sprites.dev"),
+        "sprites_namespace": os.getenv("TERMINAL_SPRITES_NAMESPACE", ""),
         "sprites_name_prefix": os.getenv("TERMINAL_SPRITES_NAME_PREFIX", "hermes"),
         "cwd": cwd,
         "host_cwd": host_cwd,
@@ -1350,6 +1351,7 @@ def _create_environment(env_type: str, image: str, cwd: str, timeout: int,
             persistent_filesystem=persistent,
             task_id=task_id,
             api_base=cc.get("sprites_api_base", "https://api.sprites.dev"),
+            namespace=cc.get("sprites_namespace", ""),
             name_prefix=cc.get("sprites_name_prefix", "hermes"),
         )
 
@@ -2034,6 +2036,7 @@ def terminal_tool(
                                 "docker_persist_across_processes": config.get("docker_persist_across_processes", True),
                                 "docker_orphan_reaper": config.get("docker_orphan_reaper", True),
                                 "sprites_api_base": config.get("sprites_api_base", "https://api.sprites.dev"),
+                                "sprites_namespace": config.get("sprites_namespace", ""),
                                 "sprites_name_prefix": config.get("sprites_name_prefix", "hermes"),
                             }
 
@@ -2605,6 +2608,7 @@ if __name__ == "__main__":
     print(f"  Docker image: {config['docker_image']}")
     print(f"  Modal image: {config['modal_image']}")
     print(f"  Sprites API base: {config['sprites_api_base']}")
+    print(f"  Sprites namespace: {config['sprites_namespace'] or '(auto from token)'}")
     print(f"  Working directory: {config['cwd']}")
     print(f"  Default timeout: {config['timeout']}s")
     print(f"  Lifetime: {config['lifetime_seconds']}s")

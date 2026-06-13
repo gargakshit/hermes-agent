@@ -690,6 +690,7 @@ def _get_file_ops(task_id: str = "default") -> ShellFileOperations:
                     "docker_forward_env": config.get("docker_forward_env", []),
                     "docker_run_as_host_user": config.get("docker_run_as_host_user", False),
                     "sprites_api_base": config.get("sprites_api_base", "https://api.sprites.dev"),
+                    "sprites_namespace": config.get("sprites_namespace", ""),
                     "sprites_name_prefix": config.get("sprites_name_prefix", "hermes"),
                 }
 

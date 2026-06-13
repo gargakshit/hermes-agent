@@ -1028,6 +1028,7 @@ if _config_path.exists():
                 "modal_image": "TERMINAL_MODAL_IMAGE",
                 "daytona_image": "TERMINAL_DAYTONA_IMAGE",
                 "sprites_api_base": "TERMINAL_SPRITES_API_BASE",
+                "sprites_namespace": "TERMINAL_SPRITES_NAMESPACE",
                 "sprites_name_prefix": "TERMINAL_SPRITES_NAME_PREFIX",
                 "ssh_host": "TERMINAL_SSH_HOST",
                 "ssh_user": "TERMINAL_SSH_USER",

@@ -650,6 +650,7 @@ def _get_or_create_env(task_id: str):
                 "docker_volumes": config.get("docker_volumes", []),
                 "docker_run_as_host_user": config.get("docker_run_as_host_user", False),
                 "sprites_api_base": config.get("sprites_api_base", "https://api.sprites.dev"),
+                "sprites_namespace": config.get("sprites_namespace", ""),
                 "sprites_name_prefix": config.get("sprites_name_prefix", "hermes"),
             }
 

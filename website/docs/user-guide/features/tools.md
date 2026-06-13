@@ -130,6 +130,7 @@ terminal:
   backend: sprites
   cwd: /home/sprite
   sprites_api_base: https://api.sprites.dev
+  sprites_namespace: ""   # blank = auto from SPRITES_TOKEN hash
   sprites_name_prefix: hermes
 ```
 

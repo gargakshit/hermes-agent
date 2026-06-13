@@ -315,6 +315,11 @@ def test_sprites_config_is_bridged_everywhere():
     assert "sprites_api_base" in _save_config_env_sync_keys()
     assert "TERMINAL_SPRITES_API_BASE" in _terminal_tool_env_var_names()
 
+    assert "sprites_namespace" in _cli_env_map_keys()
+    assert "sprites_namespace" in _gateway_env_map_keys()
+    assert "sprites_namespace" in _save_config_env_sync_keys()
+    assert "TERMINAL_SPRITES_NAMESPACE" in _terminal_tool_env_var_names()
+
     assert "sprites_name_prefix" in _cli_env_map_keys()
     assert "sprites_name_prefix" in _gateway_env_map_keys()
     assert "sprites_name_prefix" in _save_config_env_sync_keys()

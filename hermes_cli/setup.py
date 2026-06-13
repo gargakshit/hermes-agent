@@ -1380,6 +1380,7 @@ def setup_terminal_backend(config: dict):
 
         config["terminal"].setdefault("cwd", "/home/sprite")
         config["terminal"].setdefault("sprites_api_base", "https://api.sprites.dev")
+        config["terminal"].setdefault("sprites_namespace", "")
         config["terminal"].setdefault("sprites_name_prefix", "hermes")
         config["terminal"].setdefault("container_persistent", True)
 

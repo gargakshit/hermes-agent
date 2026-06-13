@@ -114,6 +114,7 @@ terminal:
   modal_image: "nikolaik/python-nodejs:python3.11-nodejs20"                 # Container image for Modal backend
   daytona_image: "nikolaik/python-nodejs:python3.11-nodejs20"               # Container image for Daytona backend
   sprites_api_base: "https://api.sprites.dev"                               # Sprites API endpoint
+  sprites_namespace: ""                                                     # Sprite name namespace (blank = auto from token)
   sprites_name_prefix: "hermes"                                             # Prefix for Hermes-managed Sprites
 ```
 
@@ -325,6 +326,7 @@ terminal:
   timeout: 180
   container_persistent: true
   sprites_api_base: https://api.sprites.dev
+  sprites_namespace: ""   # blank = auto from SPRITES_TOKEN hash
   sprites_name_prefix: hermes
 ```
 

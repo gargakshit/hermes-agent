@@ -130,6 +130,7 @@ terminal:
   backend: sprites
   cwd: /home/sprite
   sprites_api_base: https://api.sprites.dev
+  sprites_namespace: ""   # 留空 = 根据 SPRITES_TOKEN 哈希自动生成
   sprites_name_prefix: hermes
 ```
 
