@@ -1226,7 +1226,7 @@ agent:
 
 ```yaml
 tts:
-  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "minimax" | "mistral" | "gemini" | "xai" | "neutts"
+  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "openrouter" | "minimax" | "mistral" | "gemini" | "xai" | "neutts" | "kittentts" | "piper"
   speed: 1.0                    # Global speed multiplier (fallback for all providers)
   edge:
     voice: "en-US-AriaNeural"   # 322 voices, 74 languages
@@ -1239,6 +1239,11 @@ tts:
     voice: "alloy"              # alloy, echo, fable, onyx, nova, shimmer
     speed: 1.0                  # Speed multiplier (clamped to 0.25–4.0 by the API)
     base_url: "https://api.openai.com/v1"  # Override for OpenAI-compatible TTS endpoints
+  openrouter:
+    model: "microsoft/mai-voice-2"
+    voice: "en-US-Harper:MAI-Voice-2"
+    response_format: "mp3"       # mp3 by default; some models also support pcm/wav
+    speed: 1.0
   minimax:
     speed: 1.0                  # Speech speed multiplier
     # base_url: ""              # Optional: override for OpenAI-compatible TTS endpoints
@@ -1401,11 +1406,18 @@ Hashes are deterministic — the same user always maps to the same hash, so the 
 
 ```yaml
 stt:
-  provider: "local"            # "local" | "groq" | "openai" | "mistral"
+  provider: "local"            # "local" | "local_command" | "groq" | "openai" | "openrouter" | "mistral" | "xai" | "elevenlabs"
   local:
     model: "base"              # tiny, base, small, medium, large-v3
   openai:
     model: "whisper-1"         # whisper-1 | gpt-4o-mini-transcribe | gpt-4o-transcribe
+  openrouter:
+    model: "openai/whisper-large-v3"
+    language: "en"             # optional; omit for auto-detect
+  mistral:
+    model: "voxtral-mini-latest"
+  elevenlabs:
+    model_id: "scribe_v2"
   # model: "whisper-1"         # Legacy fallback key still respected
 ```
 
@@ -1414,16 +1426,22 @@ Provider behavior:
 - `local` uses `faster-whisper` running on your machine. Install it separately with `pip install faster-whisper`.
 - `groq` uses Groq's Whisper-compatible endpoint and reads `GROQ_API_KEY`.
 - `openai` uses the OpenAI speech API and reads `VOICE_TOOLS_OPENAI_KEY`.
+- `openrouter` posts base64 audio to OpenRouter and reads `OPENROUTER_API_KEY`.
+- `mistral` uses Mistral Voxtral Transcribe and reads `MISTRAL_API_KEY`.
+- `xai` uses xAI Grok STT and reads `XAI_API_KEY` or xAI OAuth.
+- `elevenlabs` uses ElevenLabs Scribe and reads `ELEVENLABS_API_KEY`.
 
-If the requested provider is unavailable, Hermes falls back automatically in this order: `local` → `groq` → `openai`.
+If no provider is explicitly configured, Hermes falls back automatically in this order: `local` → `local_command` → `groq` → `openai` → `openrouter` → `mistral` → `xai` → `elevenlabs`.
 
-Groq and OpenAI model overrides are environment-driven:
+Hosted STT model overrides are environment-driven:
 
 ```bash
 STT_GROQ_MODEL=whisper-large-v3-turbo
 STT_OPENAI_MODEL=whisper-1
+STT_OPENROUTER_MODEL=openai/whisper-large-v3
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 STT_OPENAI_BASE_URL=https://api.openai.com/v1
+OPENROUTER_STT_BASE_URL=https://openrouter.ai/api/v1
 ```
 
 ## Voice Mode (CLI)

@@ -14,13 +14,14 @@ If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, 
 
 ## Text-to-Speech
 
-Convert text to speech with ten providers:
+Convert text to speech with eleven providers:
 
 | Provider | Quality | Cost | API Key |
 |----------|---------|------|---------|
 | **Edge TTS** (default) | Good | Free | None needed |
 | **ElevenLabs** | Excellent | Paid | `ELEVENLABS_API_KEY` |
 | **OpenAI TTS** | Good | Paid | `VOICE_TOOLS_OPENAI_KEY` |
+| **OpenRouter TTS** | Good–Excellent | Paid | `OPENROUTER_API_KEY` |
 | **MiniMax TTS** | Excellent | Paid | `MINIMAX_API_KEY` |
 | **Mistral (Voxtral TTS)** | Excellent | Paid | `MISTRAL_API_KEY` |
 | **Google Gemini TTS** | Excellent | Free tier | `GEMINI_API_KEY` |
@@ -43,7 +44,7 @@ Convert text to speech with ten providers:
 ```yaml
 # In ~/.hermes/config.yaml
 tts:
-  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "minimax" | "mistral" | "gemini" | "xai" | "neutts" | "kittentts" | "piper"
+  provider: "edge"              # "edge" | "elevenlabs" | "openai" | "openrouter" | "minimax" | "mistral" | "gemini" | "xai" | "neutts" | "kittentts" | "piper"
   speed: 1.0                    # Global speed multiplier (provider-specific settings override this)
   edge:
     voice: "en-US-AriaNeural"   # 322 voices, 74 languages
@@ -56,6 +57,12 @@ tts:
     voice: "alloy"              # alloy, echo, fable, onyx, nova, shimmer
     base_url: "https://api.openai.com/v1"  # Override for OpenAI-compatible TTS endpoints
     speed: 1.0                  # 0.25 - 4.0
+  openrouter:
+    model: "microsoft/mai-voice-2"          # Any OpenRouter speech model
+    voice: "en-US-Harper:MAI-Voice-2"      # Provider-specific voice ID
+    response_format: "mp3"                  # mp3 by default; some models also support pcm/wav
+    speed: 1.0
+    # base_url: "https://openrouter.ai/api/v1"
   minimax:
     model: "speech-2.8-hd"     # speech-2.8-hd (default), speech-2.8-turbo
     voice_id: "English_Graceful_Lady"  # See https://platform.minimax.io/faq/system-voice-id
@@ -136,6 +143,7 @@ Each provider has a documented per-request input-character cap. Hermes truncates
 |----------|---------------------|
 | Edge TTS | 5000 |
 | OpenAI | 4096 |
+| OpenRouter | 4096 |
 | xAI | 15000 |
 | MiniMax | 10000 |
 | Mistral | 4000 |
@@ -170,6 +178,7 @@ Only positive integers are honored. Zero, negative, non-numeric, or boolean valu
 Telegram voice bubbles require Opus/OGG audio format:
 
 - **OpenAI, ElevenLabs, and Mistral** produce Opus natively — no extra setup
+- **OpenRouter TTS** outputs MP3 by default and needs **ffmpeg** to convert for Telegram voice bubbles
 - **Edge TTS** (default) outputs MP3 and needs **ffmpeg** to convert:
 - **MiniMax TTS** outputs MP3 and needs **ffmpeg** to convert for Telegram voice bubbles
 - **Google Gemini TTS** outputs raw PCM and uses **ffmpeg** to encode Opus directly for Telegram voice bubbles
@@ -189,7 +198,7 @@ brew install ffmpeg
 sudo dnf install ffmpeg
 ```
 
-Without ffmpeg, Edge TTS, MiniMax TTS, NeuTTS, KittenTTS, and Piper audio are sent as regular audio files (playable, but shown as a rectangular player instead of a voice bubble).
+Without ffmpeg, Edge TTS, OpenRouter TTS, MiniMax TTS, NeuTTS, KittenTTS, and Piper audio are sent as regular audio files (playable, but shown as a rectangular player instead of a voice bubble).
 
 :::tip
 If you want voice bubbles without installing ffmpeg, switch to the OpenAI, ElevenLabs, or Mistral provider.
@@ -416,6 +425,10 @@ Voice messages sent on Telegram, Discord, WhatsApp, Slack, or Signal are automat
 | **Local Whisper** (default) | Good | Free | None needed |
 | **Groq Whisper API** | Good–Best | Free tier | `GROQ_API_KEY` |
 | **OpenAI Whisper API** | Good–Best | Paid | `VOICE_TOOLS_OPENAI_KEY` or `OPENAI_API_KEY` |
+| **OpenRouter Transcriptions** | Model-dependent | Paid | `OPENROUTER_API_KEY` |
+| **Mistral Voxtral Transcribe** | Excellent | Paid | `MISTRAL_API_KEY` |
+| **xAI Grok STT** | Good | Paid | `XAI_API_KEY` or xAI OAuth |
+| **ElevenLabs Scribe** | Excellent | Paid | `ELEVENLABS_API_KEY` |
 
 :::info Zero Config
 Local transcription works out of the box when `faster-whisper` is installed. If that's unavailable, Hermes can also use a local `whisper` CLI from common install locations (like `/opt/homebrew/bin`) or a custom command via `HERMES_LOCAL_STT_COMMAND`.
@@ -426,15 +439,21 @@ Local transcription works out of the box when `faster-whisper` is installed. If 
 ```yaml
 # In ~/.hermes/config.yaml
 stt:
-  provider: "local"           # "local" | "groq" | "openai" | "mistral" | "xai"
+  provider: "local"           # "local" | "local_command" | "groq" | "openai" | "openrouter" | "mistral" | "xai" | "elevenlabs"
   local:
     model: "base"             # tiny, base, small, medium, large-v3
   openai:
     model: "whisper-1"        # whisper-1, gpt-4o-mini-transcribe, gpt-4o-transcribe
+  openrouter:
+    model: "openai/whisper-large-v3"
+    language: "en"            # optional; omit for auto-detect
+    # base_url: "https://openrouter.ai/api/v1"
   mistral:
     model: "voxtral-mini-latest"  # voxtral-mini-latest, voxtral-mini-2602
   xai:
     model: "grok-stt"         # xAI Grok STT
+  elevenlabs:
+    model_id: "scribe_v2"
 ```
 
 ### Provider Details
@@ -452,6 +471,8 @@ stt:
 **Groq API** — Requires `GROQ_API_KEY`. Good cloud fallback when you want a free hosted STT option.
 
 **OpenAI API** — Accepts `VOICE_TOOLS_OPENAI_KEY` first and falls back to `OPENAI_API_KEY`. Supports `whisper-1`, `gpt-4o-mini-transcribe`, and `gpt-4o-transcribe`.
+
+**OpenRouter API** — Requires `OPENROUTER_API_KEY`. Posts base64 audio to `https://openrouter.ai/api/v1/audio/transcriptions`. Default model is `openai/whisper-large-v3`; set `stt.provider: openrouter` and override `stt.openrouter.model` for other OpenRouter transcription models.
 
 **Mistral API (Voxtral Transcribe)** — Requires `MISTRAL_API_KEY`. Uses Mistral's [Voxtral Transcribe](https://docs.mistral.ai/capabilities/audio/speech_to_text/) models. Supports 13 languages, speaker diarization, and word-level timestamps. Install with `pip install hermes-agent[mistral]`.
 
@@ -483,6 +504,7 @@ If your configured provider isn't available, Hermes automatically falls back:
 - **Local faster-whisper unavailable** → Tries a local `whisper` CLI or `HERMES_LOCAL_STT_COMMAND` before cloud providers
 - **Groq key not set** → Falls back to local transcription, then OpenAI
 - **OpenAI key not set** → Falls back to local transcription, then Groq
+- **OpenRouter key not set** → Skipped in auto-detect; explicitly set `stt.provider: openrouter` to require it
 - **Mistral key/SDK not set** → Skipped in auto-detect; falls through to next available provider
 - **Nothing available** → Voice messages pass through with an accurate note to the user
 
@@ -564,7 +586,7 @@ The shell command runs under the same user as Hermes with full filesystem access
 
 ### Python plugin providers (STT)
 
-For STT engines that aren't built-in AND can't be expressed as a shell command (need a Python SDK, OAuth-refreshing auth, streaming chunks, etc.), register a Python plugin via `ctx.register_transcription_provider()`. The plugin **coexists with** the 6 built-in providers (`local`, `local_command`, `groq`, `openai`, `mistral`, `xai`) and the `stt.providers.<name>: type: command` registry — built-ins keep their native implementations and always win on name collision; command providers win over plugins of the same name (config is more local than plugin install).
+For STT engines that aren't built-in AND can't be expressed as a shell command (need a Python SDK, OAuth-refreshing auth, streaming chunks, etc.), register a Python plugin via `ctx.register_transcription_provider()`. The plugin **coexists with** the built-in providers (`local`, `local_command`, `groq`, `openai`, `openrouter`, `mistral`, `xai`, `elevenlabs`) and the `stt.providers.<name>: type: command` registry — built-ins keep their native implementations and always win on name collision; command providers win over plugins of the same name (config is more local than plugin install).
 
 #### When to pick which (STT)
 

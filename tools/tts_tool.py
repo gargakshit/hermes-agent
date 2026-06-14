@@ -6,6 +6,7 @@ Built-in TTS providers:
 - Edge TTS (default, free, no API key): Microsoft Edge neural voices
 - ElevenLabs (premium): High-quality voices, needs ELEVENLABS_API_KEY
 - OpenAI TTS: Good quality, needs OPENAI_API_KEY
+- OpenRouter TTS: OpenRouter speech models, needs OPENROUTER_API_KEY
 - MiniMax TTS: High-quality with voice cloning, needs MINIMAX_API_KEY
 - Mistral (Voxtral TTS): Multilingual, native Opus, needs MISTRAL_API_KEY
 - Google Gemini TTS: Controllable, 30 prebuilt voices, needs GEMINI_API_KEY
@@ -176,6 +177,16 @@ DEFAULT_KITTENTTS_VOICE = "Jasper"
 DEFAULT_PIPER_VOICE = "en_US-lessac-medium"  # balanced size/quality
 DEFAULT_OPENAI_VOICE = "alloy"
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_OPENROUTER_TTS_MODEL = "microsoft/mai-voice-2"
+DEFAULT_OPENROUTER_TTS_VOICE = "en-US-Harper:MAI-Voice-2"
+DEFAULT_OPENROUTER_TTS_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_OPENROUTER_TTS_RESPONSE_FORMAT = "mp3"
+OPENROUTER_TTS_RESPONSE_FORMATS = frozenset({"mp3", "pcm", "wav"})
+OPENROUTER_TTS_RESPONSE_FORMAT_EXTENSIONS = {
+    "mp3": ".mp3",
+    "pcm": ".pcm",
+    "wav": ".wav",
+}
 DEFAULT_MINIMAX_MODEL = "speech-02-hd"
 DEFAULT_MINIMAX_VOICE_ID = "English_expressive_narrator"
 DEFAULT_MINIMAX_BASE_URL = "https://api.minimax.io/v1/t2a_v2"
@@ -213,6 +224,7 @@ DEFAULT_OUTPUT_DIR = _get_default_output_dir()
 PROVIDER_MAX_TEXT_LENGTH: Dict[str, int] = {
     "edge": 5000,         # edge-tts practical sync limit
     "openai": 4096,       # https://platform.openai.com/docs/guides/text-to-speech
+    "openrouter": 4096,   # model-dependent; conservative default
     "xai": 15000,         # https://docs.x.ai/developers/model-capabilities/audio/text-to-speech
     "minimax": 10000,     # https://platform.minimax.io/docs/api-reference/speech-t2a-http (sync)
     "mistral": 4000,      # conservative; no published per-request cap
@@ -342,6 +354,50 @@ def _get_provider(tts_config: Dict[str, Any]) -> str:
     return (tts_config.get("provider") or DEFAULT_PROVIDER).lower().strip()
 
 
+def _get_openrouter_api_key(config: Optional[Dict[str, Any]] = None) -> str:
+    """Return the OpenRouter API key from config or the Hermes dotenv/env."""
+    config = config or {}
+    cfg_value = ""
+    if isinstance(config, dict):
+        raw = config.get("api_key")
+        if raw is not None:
+            cfg_value = str(raw).strip()
+    return cfg_value or (get_env_value("OPENROUTER_API_KEY") or "").strip()
+
+
+def _get_openrouter_tts_response_format(tts_config: Dict[str, Any]) -> str:
+    """Return a supported OpenRouter speech response format."""
+    or_config = tts_config.get("openrouter", {}) if isinstance(tts_config, dict) else {}
+    if not isinstance(or_config, dict):
+        or_config = {}
+    raw = (
+        or_config.get("response_format")
+        or or_config.get("output_format")
+        or DEFAULT_OPENROUTER_TTS_RESPONSE_FORMAT
+    )
+    response_format = str(raw).strip().lower()
+    if response_format in OPENROUTER_TTS_RESPONSE_FORMATS:
+        return response_format
+    logger.warning(
+        "Ignoring unsupported OpenRouter TTS response_format %r; expected one of %s",
+        response_format,
+        ", ".join(sorted(OPENROUTER_TTS_RESPONSE_FORMATS)),
+    )
+    return DEFAULT_OPENROUTER_TTS_RESPONSE_FORMAT
+
+
+def _configured_openrouter_tts_output_path(
+    file_path: Path,
+    tts_config: Dict[str, Any],
+) -> Path:
+    """Align output suffix with the OpenRouter response format."""
+    response_format = _get_openrouter_tts_response_format(tts_config)
+    suffix = OPENROUTER_TTS_RESPONSE_FORMAT_EXTENSIONS.get(response_format)
+    if suffix and file_path.suffix.lower() != suffix:
+        return file_path.with_suffix(suffix)
+    return file_path
+
+
 # ===========================================================================
 # Custom command providers (type: command under tts.providers.<name>)
 # ===========================================================================
@@ -377,6 +433,7 @@ BUILTIN_TTS_PROVIDERS = frozenset({
     "edge",
     "elevenlabs",
     "openai",
+    "openrouter",
     "minimax",
     "xai",
     "mistral",
@@ -1044,6 +1101,81 @@ def _generate_openai_tts(text: str, output_path: str, tts_config: Dict[str, Any]
         close = getattr(client, "close", None)
         if callable(close):
             close()
+
+
+# ===========================================================================
+# Provider: OpenRouter TTS
+# ===========================================================================
+def _generate_openrouter_tts(text: str, output_path: str, tts_config: Dict[str, Any]) -> str:
+    """
+    Generate audio using OpenRouter's speech endpoint.
+
+    OpenRouter's endpoint is OpenAI-shaped but not fully OpenAI-compatible for
+    every model: MAI-Voice-2, for example, accepts mp3/pcm and rejects Opus.
+    Keeping this as a native provider lets Hermes request MP3 and then use the
+    existing ffmpeg path for Telegram voice bubbles.
+    """
+    import requests
+
+    or_config = tts_config.get("openrouter", {}) if isinstance(tts_config, dict) else {}
+    if not isinstance(or_config, dict):
+        or_config = {}
+
+    api_key = _get_openrouter_api_key(or_config)
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not set. Get one at https://openrouter.ai/keys")
+
+    model = str(or_config.get("model") or DEFAULT_OPENROUTER_TTS_MODEL).strip()
+    voice = str(or_config.get("voice") or DEFAULT_OPENROUTER_TTS_VOICE).strip()
+    response_format = _get_openrouter_tts_response_format(tts_config)
+    base_url = str(
+        or_config.get("base_url")
+        or get_env_value("OPENROUTER_BASE_URL")
+        or DEFAULT_OPENROUTER_TTS_BASE_URL
+    ).strip().rstrip("/")
+    speed = float(or_config.get("speed", tts_config.get("speed", 1.0)))
+
+    payload: Dict[str, Any] = {
+        "input": text,
+        "model": model,
+        "voice": voice,
+        "response_format": response_format,
+    }
+    if speed != 1.0:
+        payload["speed"] = speed
+    provider_cfg = or_config.get("provider")
+    if isinstance(provider_cfg, dict) and provider_cfg:
+        payload["provider"] = provider_cfg
+
+    response = requests.post(
+        f"{base_url}/audio/speech",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=90,
+    )
+    if response.status_code != 200:
+        detail = response.text[:300]
+        try:
+            body = response.json()
+            error_value = body.get("error")
+            if isinstance(error_value, dict):
+                detail = str(error_value.get("message") or error_value)
+            elif error_value:
+                detail = str(error_value)
+            elif body:
+                detail = str(body)
+        except Exception:
+            pass
+        raise RuntimeError(
+            f"OpenRouter TTS API error (HTTP {response.status_code}): {detail}"
+        )
+
+    with open(output_path, "wb") as f:
+        f.write(response.content)
+    return output_path
 
 
 # ===========================================================================
@@ -2094,6 +2226,11 @@ def text_to_speech_tool(
             file_path = _configured_command_tts_output_path(
                 file_path, command_provider_config
             )
+        elif provider == "openrouter":
+            # OpenRouter speech models do not consistently support Opus
+            # directly. Generate MP3 by default, then let the Telegram voice
+            # delivery path convert to Opus when needed.
+            file_path = _configured_openrouter_tts_output_path(file_path, tts_config)
     else:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         out_dir = Path(DEFAULT_OUTPUT_DIR)
@@ -2101,6 +2238,10 @@ def text_to_speech_tool(
         if command_provider_config is not None:
             fmt = _get_command_tts_output_format(command_provider_config)
             file_path = out_dir / f"tts_{timestamp}.{fmt}"
+        elif provider == "openrouter":
+            fmt = _get_openrouter_tts_response_format(tts_config)
+            suffix = OPENROUTER_TTS_RESPONSE_FORMAT_EXTENSIONS.get(fmt, ".mp3")
+            file_path = out_dir / f"tts_{timestamp}{suffix}"
         # Use .ogg for Telegram with providers that support native Opus output,
         # otherwise fall back to .mp3 (Edge TTS will attempt ffmpeg conversion later).
         elif want_opus and provider in {"openai", "elevenlabs", "mistral", "gemini"}:
@@ -2158,6 +2299,10 @@ def text_to_speech_tool(
                 }, ensure_ascii=False)
             logger.info("Generating speech with OpenAI TTS...")
             _generate_openai_tts(text, file_str, tts_config)
+
+        elif provider == "openrouter":
+            logger.info("Generating speech with OpenRouter TTS...")
+            _generate_openrouter_tts(text, file_str, tts_config)
 
         elif provider == "minimax":
             logger.info("Generating speech with MiniMax TTS...")
@@ -2291,6 +2436,15 @@ def text_to_speech_tool(
             if opus_path:
                 file_str = opus_path
                 voice_compatible = True
+        elif (
+            want_opus
+            and provider == "openrouter"
+            and file_str.lower().endswith((".mp3", ".wav", ".pcm"))
+        ):
+            opus_path = _convert_to_opus(file_str)
+            if opus_path:
+                file_str = opus_path
+                voice_compatible = True
         elif provider in {"elevenlabs", "openai", "mistral", "gemini"}:
             voice_compatible = want_opus and file_str.endswith(".ogg")
 
@@ -2361,6 +2515,10 @@ def check_tts_requirements() -> bool:
             return True
     except ImportError:
         pass
+    tts_config = _load_tts_config()
+    openrouter_config = tts_config.get("openrouter", {}) if isinstance(tts_config, dict) else {}
+    if _get_openrouter_api_key(openrouter_config):
+        return True
     if get_env_value("MINIMAX_API_KEY"):
         return True
     try:

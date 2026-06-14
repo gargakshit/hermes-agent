@@ -269,6 +269,15 @@ TOOL_CATEGORIES = {
                 "tts_provider": "openai",
             },
             {
+                "name": "OpenRouter TTS",
+                "badge": "paid",
+                "tag": "OpenRouter speech models",
+                "env_vars": [
+                    {"key": "OPENROUTER_API_KEY", "prompt": "OpenRouter API key", "url": "https://openrouter.ai/keys"},
+                ],
+                "tts_provider": "openrouter",
+            },
+            {
                 "name": "xAI TTS",
                 "tag": "Grok voices — uses xAI Grok OAuth or XAI_API_KEY",
                 "env_vars": [],
@@ -1972,8 +1981,8 @@ def _plugin_tts_providers() -> list[dict]:
     """Build picker-row dicts from plugin-registered TTS providers.
 
     Issue #30398 — the ``register_tts_provider()`` plugin hook
-    coexists alongside the 10 built-in TTS providers
-    (``edge``/``openai``/``elevenlabs``/…) and the
+    coexists alongside the 11 built-in TTS providers
+    (``edge``/``openai``/``openrouter``/``elevenlabs``/…) and the
     ``tts.providers.<name>: type: command`` registry from PR #17843.
     Built-in rows stay hardcoded in ``TOOL_CATEGORIES["tts"]``; this
     function only injects PLUGIN-registered providers.

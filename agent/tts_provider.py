@@ -13,7 +13,7 @@ Three coexisting TTS extension surfaces — in resolution order:
 
 1. **Built-in providers** (``BUILTIN_TTS_PROVIDERS`` in
    :mod:`tools.tts_tool`) — native Python implementations (edge, openai,
-   elevenlabs, …). **Always win** — plugins cannot shadow them.
+   openrouter, elevenlabs, …). **Always win** — plugins cannot shadow them.
 2. **Command-type providers** declared under ``tts.providers.<name>:
    type: command`` (PR #17843, commit ``2facea7f7``). Wire any local
    CLI into Hermes with shell-template placeholders. **Wins over a
@@ -76,8 +76,8 @@ class TTSProvider(abc.ABC):
 
         Lowercase, no spaces. Examples: ``cartesia``, ``fishaudio``,
         ``deepgram``. Names that collide with a built-in TTS provider
-        (``edge``, ``openai``, ``elevenlabs``, ``minimax``, ``gemini``,
-        ``mistral``, ``xai``, ``piper``, ``kittentts``, ``neutts``) are
+        (``edge``, ``openai``, ``openrouter``, ``elevenlabs``, ``minimax``,
+        ``gemini``, ``mistral``, ``xai``, ``piper``, ``kittentts``, ``neutts``) are
         rejected at registration time.
         """
 

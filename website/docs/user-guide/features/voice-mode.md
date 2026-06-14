@@ -400,14 +400,14 @@ stt:
                                     # passes its path to the agent as part of the
                                     # inbound message, useful for custom pipelines
                                     # (diarization, alignment, archival, etc.)
-  provider: "local"                  # "local" (free) | "groq" | "openai" | "mistral" | "xai"
+  provider: "local"                  # "local" | "local_command" | "groq" | "openai" | "openrouter" | "mistral" | "xai" | "elevenlabs"
   local:
     model: "base"                    # tiny, base, small, medium, large-v3
   # model: "whisper-1"              # Legacy: used when provider is not set
 
 # Text-to-Speech
 tts:
-  provider: "edge"                 # "edge" (free) | "elevenlabs" | "openai" | "neutts" | "minimax" | "mistral" | "gemini" | "xai" | "kittentts" | "piper"
+  provider: "edge"                 # "edge" (free) | "elevenlabs" | "openai" | "openrouter" | "neutts" | "minimax" | "mistral" | "gemini" | "xai" | "kittentts" | "piper"
   edge:
     voice: "en-US-AriaNeural"      # 322 voices, 74 languages
   elevenlabs:
@@ -435,11 +435,14 @@ VOICE_TOOLS_OPENAI_KEY=...         # OpenAI Whisper (paid)
 # STT advanced overrides (optional)
 STT_GROQ_MODEL=whisper-large-v3-turbo    # Override default Groq STT model
 STT_OPENAI_MODEL=whisper-1               # Override default OpenAI STT model
+STT_OPENROUTER_MODEL=openai/whisper-large-v3  # Override default OpenRouter STT model
 GROQ_BASE_URL=https://api.groq.com/openai/v1     # Custom Groq endpoint
 STT_OPENAI_BASE_URL=https://api.openai.com/v1    # Custom OpenAI STT endpoint
+OPENROUTER_STT_BASE_URL=https://openrouter.ai/api/v1  # Custom OpenRouter STT endpoint
 
 # Text-to-Speech providers (Edge TTS and NeuTTS need no key)
 ELEVENLABS_API_KEY=***             # ElevenLabs (premium quality)
+OPENROUTER_API_KEY=***             # OpenRouter TTS/STT
 # VOICE_TOOLS_OPENAI_KEY above also enables OpenAI TTS
 
 # Discord voice channel
@@ -458,10 +461,12 @@ DISCORD_ALLOWED_USERS=...
 | **Groq** | `whisper-large-v3` | Fast (~1s) | Better | Free tier | Yes |
 | **OpenAI** | `whisper-1` | Fast (~1s) | Good | Paid | Yes |
 | **OpenAI** | `gpt-4o-transcribe` | Medium (~2s) | Best | Paid | Yes |
+| **OpenRouter** | `openai/whisper-large-v3` | Model-dependent | Model-dependent | Paid | Yes |
 | **Mistral** | `voxtral-mini-latest` | Fast | Good | Paid | Yes |
 | **xAI** | `grok-stt` | Fast | Good | Paid | Yes |
+| **ElevenLabs** | `scribe_v2` | Fast | Excellent | Paid | Yes |
 
-Provider priority (automatic fallback): **local** > **groq** > **openai**
+Provider priority (automatic fallback): **local** > **local_command** > **groq** > **openai** > **openrouter** > **mistral** > **xAI** > **elevenlabs**
 
 ### TTS Provider Comparison
 
@@ -470,6 +475,7 @@ Provider priority (automatic fallback): **local** > **groq** > **openai**
 | **Edge TTS** | Good | Free | ~1s | No |
 | **ElevenLabs** | Excellent | Paid | ~2s | Yes |
 | **OpenAI TTS** | Good | Paid | ~1.5s | Yes |
+| **OpenRouter TTS** | Good–Excellent | Paid | Model-dependent | Yes |
 | **NeuTTS** | Good | Free | Depends on CPU/GPU | No |
 
 NeuTTS uses the `tts.neutts` config block above.

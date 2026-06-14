@@ -12,7 +12,7 @@ All variables go in `~/.hermes/.env`. You can also set them with `hermes config 
 
 | Variable | Description |
 |----------|-------------|
-| `OPENROUTER_API_KEY` | OpenRouter API key (recommended for flexibility) |
+| `OPENROUTER_API_KEY` | OpenRouter API key for model routing, OpenRouter TTS, and OpenRouter Transcriptions |
 | `OPENROUTER_BASE_URL` | Override the OpenRouter-compatible base URL |
 | `HERMES_OPENROUTER_CACHE` | Enable OpenRouter response caching (`1`/`true`/`yes`/`on`). Overrides `openrouter.response_cache` in config.yaml. See [Response Caching](https://openrouter.ai/docs/guides/features/response-caching). |
 | `HERMES_OPENROUTER_CACHE_TTL` | Cache TTL in seconds (1-86400). Overrides `openrouter.response_cache_ttl` in config.yaml. |
@@ -156,6 +156,8 @@ For native Anthropic auth, Hermes prefers Claude Code's own credential files whe
 | `GROQ_BASE_URL` | Override the Groq OpenAI-compatible STT endpoint |
 | `STT_OPENAI_MODEL` | Override the OpenAI STT model (default: `whisper-1`) |
 | `STT_OPENAI_BASE_URL` | Override the OpenAI-compatible STT endpoint |
+| `STT_OPENROUTER_MODEL` | Override the OpenRouter STT model (default: `openai/whisper-large-v3`) |
+| `OPENROUTER_STT_BASE_URL` | Override the OpenRouter STT endpoint |
 | `GITHUB_TOKEN` | GitHub token for Skills Hub (higher API rate limits, skill publish) |
 | `HONCHO_API_KEY` | Cross-session user modeling ([honcho.dev](https://honcho.dev/)) |
 | `HONCHO_BASE_URL` | Base URL for self-hosted Honcho instances (default: Honcho cloud). No API key required for local instances |

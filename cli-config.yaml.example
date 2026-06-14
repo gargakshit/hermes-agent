@@ -751,7 +751,7 @@ platform_toolsets:
 #   skills_hub   - skill_hub (search/install/manage from online registries — user-driven only)
 #   moa          - mixture_of_agents  (requires OPENROUTER_API_KEY)
 #   todo         - todo (in-memory task planning, no deps)
-#   tts          - text_to_speech  (Edge TTS free, or ELEVENLABS/OPENAI/MINIMAX/MISTRAL key)
+#   tts          - text_to_speech  (Edge TTS free, or ELEVENLABS/OPENAI/OPENROUTER/MINIMAX/MISTRAL key)
 #   cronjob      - cronjob (create/list/update/pause/resume/run/remove scheduled tasks)
 #
 # PRESETS (curated bundles):
@@ -779,7 +779,7 @@ platform_toolsets:
 #   todo         - Task planning and tracking for multi-step work
 #   memory       - Persistent memory across sessions (personal notes + user profile)
 #   session_search - Search and recall past conversations (FTS5 + Gemini Flash summarization)
-#   tts          - Text-to-speech (Edge TTS free, ElevenLabs, OpenAI, MiniMax, Mistral)
+#   tts          - Text-to-speech (Edge TTS free, ElevenLabs, OpenAI, OpenRouter, MiniMax, Mistral)
 #   cronjob      - Schedule and manage automated tasks (CLI-only)
 #
 # Composite toolsets:
@@ -857,13 +857,17 @@ platform_toolsets:
 #     voice: "Kore"
 #     audio_tags: false
 #     persona_prompt_file: ""  # e.g. ~/.hermes/tts/radio-host.md
+#   openrouter:
+#     model: "microsoft/mai-voice-2"
+#     voice: "en-US-Harper:MAI-Voice-2"
+#     response_format: "mp3"
 
 # =============================================================================
 # Voice Transcription (Speech-to-Text)
 # =============================================================================
 # Automatically transcribe voice messages on messaging platforms.
-# Providers: local (free, faster-whisper) | groq (free tier) | openai (Whisper API) | mistral (Voxtral Transcribe)
-# Set the corresponding API key in .env: GROQ_API_KEY, OPENAI_API_KEY, or MISTRAL_API_KEY.
+# Providers: local | local_command | groq | openai | openrouter | mistral | xai | elevenlabs
+# Set the corresponding API key in .env for hosted providers.
 stt:
   enabled: true
   # provider: "local"          # auto-detected if omitted
@@ -872,6 +876,9 @@ stt:
     # language: ""             # auto-detect; set to "en", "es", "fr", etc. to force
   openai:
     model: "whisper-1"         # whisper-1 | gpt-4o-mini-transcribe | gpt-4o-transcribe
+  # openrouter:
+  #   model: "openai/whisper-large-v3"
+  #   language: "en"            # optional; omit for auto-detect
   # mistral:
   #   model: "voxtral-mini-latest"  # voxtral-mini-latest | voxtral-mini-2602
 

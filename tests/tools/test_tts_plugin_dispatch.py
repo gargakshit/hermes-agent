@@ -93,7 +93,7 @@ class TestBuiltinAlwaysWins:
 
     @pytest.mark.parametrize(
         "builtin",
-        ["edge", "openai", "elevenlabs", "minimax", "gemini",
+        ["edge", "openai", "openrouter", "elevenlabs", "minimax", "gemini",
          "mistral", "xai", "piper", "kittentts", "neutts"],
     )
     def test_dispatcher_short_circuits_builtin(self, builtin):
@@ -295,7 +295,7 @@ class TestVoiceCompatibleHelper:
 
     @pytest.mark.parametrize(
         "builtin",
-        ["edge", "openai", "elevenlabs", "minimax", "gemini",
+        ["edge", "openai", "openrouter", "elevenlabs", "minimax", "gemini",
          "mistral", "xai", "piper", "kittentts", "neutts"],
     )
     def test_builtin_names_return_false(self, builtin):
