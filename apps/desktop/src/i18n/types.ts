@@ -695,6 +695,9 @@ export interface Translations {
     deleting: string
     createDesc: string
     nameLabel: string
+    cloneFrom: string
+    cloneFromNone: string
+    cloneFromDesc: string
     cloneFromDefault: string
     cloneFromDefaultDesc: string
     invalidName: (hint: string) => string
@@ -1350,6 +1353,7 @@ export interface Translations {
       moreOptions: string
       allowSession: string
       alwaysAllowMenu: string
+      jumpToApproval: string
       reject: string
       alwaysTitle: string
       alwaysDescription: (pattern: string) => string

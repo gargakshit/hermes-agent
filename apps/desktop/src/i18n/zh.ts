@@ -1092,6 +1092,9 @@ export const zh: Translations = {
     deleting: '删除中…',
     createDesc: '配置档案是相互独立的 Hermes 环境：各自拥有独立的配置、技能和 SOUL.md。',
     nameLabel: '名称',
+    cloneFrom: '克隆来源',
+    cloneFromNone: '无（空白）',
+    cloneFromDesc: '从选中的来源配置档案复制配置、技能和 SOUL.md。',
     cloneFromDefault: '从默认档案克隆',
     cloneFromDefaultDesc: '从你的默认配置档案复制配置、技能和 SOUL.md。',
     invalidName: hint => `名称无效。${hint}`,
@@ -1871,6 +1874,7 @@ export const zh: Translations = {
       moreOptions: '更多审批选项',
       allowSession: '允许本会话',
       alwaysAllowMenu: '始终允许…',
+      jumpToApproval: '需要审批',
       reject: '拒绝',
       alwaysTitle: '始终允许此命令？',
       alwaysDescription: pattern =>

@@ -1041,6 +1041,9 @@ export const ja = defineLocale({
     deleting: '削除中...',
     createDesc: 'プロファイルは独立した Hermes 環境です：設定、スキル、SOUL.md が別々になります。',
     nameLabel: '名前',
+    cloneFrom: '複製元',
+    cloneFromNone: 'なし（空）',
+    cloneFromDesc: '選択したプロファイルから設定、スキル、SOUL.md をコピーします。',
     cloneFromDefault: 'デフォルトプロファイルから設定を複製',
     cloneFromDefaultDesc: 'デフォルトプロファイルから設定、スキル、SOUL.md をコピーします。',
     invalidName: hint => `無効なプロファイル名。${hint}`,
@@ -1831,6 +1834,7 @@ export const ja = defineLocale({
       moreOptions: 'その他の承認オプション',
       allowSession: 'このセッションで許可',
       alwaysAllowMenu: '常に許可…',
+      jumpToApproval: '承認が必要',
       reject: '拒否',
       alwaysTitle: 'このコマンドを常に許可しますか？',
       alwaysDescription: pattern =>
